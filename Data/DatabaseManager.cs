@@ -1,0 +1,60 @@
+using Microsoft.Data.Sqlite;
+using System;
+using System.IO;
+
+namespace FinanceApp.Data
+{
+    public class DatabaseManager
+    {
+        private readonly string _connectionString;
+
+        public DatabaseManager()
+        {
+            var appFolder = AppDomain.CurrentDomain.BaseDirectory;
+            var dbFolder = Path.Combine(appFolder, "Database");
+            Directory.CreateDirectory(dbFolder);
+            var dbPath = Path.Combine(dbFolder, "MyFinance.fdb");
+            _connectionString = $"Data Source={dbPath}";
+        }
+
+        public void InitializeDatabase()
+        {
+            using var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+            CreateTables(conn);
+            SeedVersionRow(conn);
+        }
+
+        public SqliteConnection OpenConnection()
+        {
+            var conn = new SqliteConnection(_connectionString);
+            conn.Open();
+            return conn;
+        }
+
+        private static void CreateTables(SqliteConnection conn)
+        {
+            const string sql = @"
+                CREATE TABLE IF NOT EXISTS dbversion (
+                    Major INTEGER NOT NULL,
+                    Minor INTEGER NOT NULL
+                );";
+
+            using var cmd = new SqliteCommand(sql, conn);
+            cmd.ExecuteNonQuery();
+        }
+
+        private static void SeedVersionRow(SqliteConnection conn)
+        {
+            using var countCmd = new SqliteCommand("SELECT COUNT(*) FROM dbversion;", conn);
+            var count = (long)countCmd.ExecuteScalar()!;
+
+            if (count == 0)
+            {
+                using var insertCmd = new SqliteCommand(
+                    "INSERT INTO dbversion (Major, Minor) VALUES (1, 0);", conn);
+                insertCmd.ExecuteNonQuery();
+            }
+        }
+    }
+}

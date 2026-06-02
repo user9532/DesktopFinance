@@ -1,0 +1,102 @@
+<Window x:Class="FinanceApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Finance" Height="600" Width="900" MinWidth="400" MinHeight="300">
+
+    <Window.Resources>
+        <Style x:Key="CloseButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="4,0,4,0"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#666666"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Style.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Foreground" Value="#CC0000"/>
+                    <Setter Property="Background" Value="#FFDDDD"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+
+        <!-- Menu bar -->
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="_File">
+                <MenuItem Header="E_xit" Click="Exit_Click"/>
+            </MenuItem>
+        </Menu>
+
+        <!-- Main content area -->
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <!-- Fixed column for the always-visible toggle button -->
+                <ColumnDefinition Width="22"/>
+                <!-- Collapsible left pane; MinWidth prevents accidental splitter collapse -->
+                <ColumnDefinition x:Name="LeftColumn" Width="200" MinWidth="30"/>
+                <!-- GridSplitter -->
+                <ColumnDefinition Width="4"/>
+                <!-- Right pane -->
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Toggle button: always visible, outside the collapsible column -->
+            <Button Grid.Column="0"
+                    x:Name="ToggleBtn"
+                    Content="&#9664;"
+                    Click="ToggleLeftPane_Click"
+                    VerticalAlignment="Top"
+                    Margin="2,12,2,0"
+                    Height="26"
+                    FontSize="9"
+                    Background="#888888"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    ToolTip="Collapse / expand the navigation pane"/>
+
+            <!-- Left pane -->
+            <Border Grid.Column="1"
+                    Background="#F5F5F5"
+                    BorderBrush="#CCCCCC"
+                    BorderThickness="0,0,0,0"
+                    ClipToBounds="True">
+                <DockPanel>
+                    <Border DockPanel.Dock="Top"
+                            Background="#E0E0E0"
+                            BorderBrush="#CCCCCC"
+                            BorderThickness="0,0,0,1"
+                            Padding="8,5">
+                        <TextBlock Text="Navigation"
+                                   FontWeight="SemiBold"
+                                   Foreground="#333333"
+                                   VerticalAlignment="Center"/>
+                    </Border>
+                    <!-- Left pane content (empty per requirements) -->
+                    <Grid/>
+                </DockPanel>
+            </Border>
+
+            <!-- GridSplitter -->
+            <GridSplitter Grid.Column="2"
+                          HorizontalAlignment="Stretch"
+                          VerticalAlignment="Stretch"
+                          Background="#CCCCCC"
+                          ResizeBehavior="PreviousAndNext"/>
+
+            <!-- Right pane: TabControl -->
+            <TabControl Grid.Column="3"
+                        x:Name="MainTabControl"
+                        Background="White">
+                <TabItem Header="Home">
+                    <Grid/>
+                </TabItem>
+            </TabControl>
+
+        </Grid>
+    </DockPanel>
+</Window>
