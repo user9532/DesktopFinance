@@ -36,8 +36,66 @@ namespace FinanceApp.Data
         {
             const string sql = @"
                 CREATE TABLE IF NOT EXISTS dbversion (
-                    Major INTEGER NOT NULL,
-                    Minor INTEGER NOT NULL
+                    Major     INTEGER NOT NULL,
+                    Minor     INTEGER NOT NULL
+                );
+
+                CREATE TABLE IF NOT EXISTS AccountChart (
+                    AccountName  TEXT,
+                    AccountType  TEXT,
+                    AccountCode  REAL,
+                    Portfolio    TEXT,
+                    AccountGroup TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS Transactions (
+                    Account     TEXT,
+                    Date        TEXT,
+                    CheckNo     TEXT,
+                    Type        TEXT,
+                    Amount      REAL,
+                    Name        TEXT,
+                    Memo        TEXT,
+                    Category    TEXT,
+                    TrnType     TEXT,
+                    Source      TEXT,
+                    Clear       INTEGER,
+                    FinancialId TEXT,
+                    Action      TEXT,
+                    Symbol      TEXT,
+                    Quantity    REAL,
+                    Price       REAL,
+                    Commission  REAL
+                );
+
+                CREATE TABLE IF NOT EXISTS CatHistory (
+                    Category    TEXT,
+                    Description TEXT,
+                    Amount      REAL
+                );
+
+                CREATE TABLE IF NOT EXISTS AccountMap (
+                    AccountName  TEXT,
+                    InternalName TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS Budget (
+                    Date     TEXT,
+                    Category TEXT,
+                    Budget   REAL
+                );
+
+                CREATE TABLE IF NOT EXISTS RecurPayment (
+                    Id         INTEGER,
+                    Name       TEXT,
+                    Amount     REAL,
+                    Memo       TEXT,
+                    Account    TEXT,
+                    Category   TEXT,
+                    Frequency  INTEGER,
+                    NextDue    TEXT,
+                    LastPosted TEXT,
+                    TrType     INTEGER
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
