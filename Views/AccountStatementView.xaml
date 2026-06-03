@@ -1,0 +1,131 @@
+<UserControl x:Class="FinanceApp.Views.AccountStatementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:local="clr-namespace:FinanceApp.Views"
+             x:Name="Root"
+             Loaded="View_Loaded"
+             Unloaded="View_Unloaded">
+
+    <DockPanel>
+
+        <!-- ── toolbar ────────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1"
+                Padding="6,5">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Add Row" Width="76" Margin="0,0,6,0" Click="AddRow_Click"/>
+                    <Button Content="Save"    Width="76" Click="Save_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Show:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+                    <ComboBox x:Name="CbFilter" Width="160"
+                              SelectedIndex="0"
+                              SelectionChanged="Filter_SelectionChanged">
+                        <ComboBoxItem Content="All Transactions"/>
+                        <ComboBoxItem Content="Uncleared"/>
+                        <ComboBoxItem Content="Cleared"/>
+                    </ComboBox>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ── transaction grid ───────────────────────────────────────── -->
+        <DataGrid x:Name="TrGrid"
+                  AutoGenerateColumns="False"
+                  CanUserSortColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  SelectionUnit="FullRow"
+                  GridLinesVisibility="Horizontal"
+                  AlternatingRowBackground="#FAFAFA"
+                  CellEditEnding="Grid_CellEditEnding">
+
+            <DataGrid.Columns>
+
+                <!-- Date -->
+                <DataGridTemplateColumn Header="Date" Width="108" SortMemberPath="DateDisplay">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DateDisplay}" Margin="3,1"
+                                       VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <DatePicker SelectedDate="{Binding DateValue, UpdateSourceTrigger=PropertyChanged}"
+                                        Loaded="DatePicker_Loaded"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Check No -->
+                <DataGridTextColumn Header="Check No"
+                                    Binding="{Binding CheckNo, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="80"/>
+
+                <!-- Name -->
+                <DataGridTextColumn Header="Name"
+                                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="160"/>
+
+                <!-- Category (ComboBox) -->
+                <DataGridTemplateColumn Header="Category" Width="160">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayCategory}" Margin="3,1"
+                                       VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox IsEditable="True"
+                                      Text="{Binding DisplayCategory, UpdateSourceTrigger=PropertyChanged}"
+                                      Loaded="CategoryCombo_Loaded"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Clear (directly-clickable checkbox) -->
+                <DataGridTemplateColumn Header="Clear" Width="48">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <CheckBox IsChecked="{Binding Clear, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"
+                                      Click="Clear_Click"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Payment -->
+                <DataGridTextColumn Header="Payment"
+                                    Binding="{Binding Payment, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="100"/>
+
+                <!-- Deposit -->
+                <DataGridTextColumn Header="Deposit"
+                                    Binding="{Binding Deposit, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="100"/>
+
+                <!-- Balance (read-only) -->
+                <DataGridTextColumn Header="Balance"
+                                    Binding="{Binding Balance, StringFormat=N2}"
+                                    Width="100"
+                                    IsReadOnly="True"/>
+
+                <!-- Memo -->
+                <DataGridTextColumn Header="Memo"
+                                    Binding="{Binding Memo, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="200"/>
+
+                <!-- Financial ID -->
+                <DataGridTextColumn Header="Financial ID"
+                                    Binding="{Binding FinancialId, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="120"/>
+
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

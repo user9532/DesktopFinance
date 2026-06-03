@@ -27,10 +27,13 @@
         <!-- Menu bar -->
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
+                <MenuItem Header="_Import QFX Data" Click="ImportQfx_Click"/>
+                <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
             <MenuItem Header="_Accounts">
-                <MenuItem Header="_New Account" Click="NewAccount_Click"/>
+                <MenuItem Header="_New Account"       Click="NewAccount_Click"/>
+                <MenuItem Header="_Account Statement" Click="AccountStatement_Click"/>
             </MenuItem>
             <MenuItem Header="_Category">
                 <MenuItem Header="_New Category" Click="NewCategory_Click"/>
