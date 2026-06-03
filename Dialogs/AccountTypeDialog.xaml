@@ -1,0 +1,28 @@
+<Window x:Class="FinanceApp.Dialogs.AccountTypeDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="New Account"
+        Height="275" Width="280"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <StackPanel Margin="24,18,22,12">
+
+        <TextBlock Text="Select account type:"
+                   FontWeight="SemiBold"
+                   Margin="0,0,0,12"/>
+
+        <RadioButton x:Name="RbBank"            Content="Bank"            IsChecked="True" Margin="0,4"/>
+        <RadioButton x:Name="RbCreditCard"      Content="Credit Card"     Margin="0,4"/>
+        <RadioButton x:Name="RbInvestment"      Content="Investment"      Margin="0,4"/>
+        <RadioButton x:Name="RbOtherAsset"      Content="Other Asset"     Margin="0,4"/>
+        <RadioButton x:Name="RbLoan"            Content="Loan"            Margin="0,4"/>
+        <RadioButton x:Name="RbOtherLiability"  Content="Other Liability" Margin="0,4"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Continue" Width="80" IsDefault="True" Margin="0,0,8,0" Click="Continue_Click"/>
+            <Button Content="Cancel"   Width="80" IsCancel="True"  Click="Cancel_Click"/>
+        </StackPanel>
+
+    </StackPanel>
+</Window>

@@ -1,4 +1,5 @@
 using FinanceApp.Data;
+using FinanceApp.Dialogs;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -22,6 +23,35 @@ namespace FinanceApp
         private void Exit_Click(object sender, RoutedEventArgs e)
         {
             Application.Current.Shutdown();
+        }
+
+        private void NewAccount_Click(object sender, RoutedEventArgs e)
+        {
+            var typeDialog = new AccountTypeDialog { Owner = this };
+            if (typeDialog.ShowDialog() != true) return;
+
+            switch (typeDialog.SelectedType)
+            {
+                case NewAccountType.Bank:
+                case NewAccountType.CreditCard:
+                case NewAccountType.Investment:
+                    new StandardAccountDialog(_db, typeDialog.SelectedType) { Owner = this }.ShowDialog();
+                    break;
+
+                case NewAccountType.Loan:
+                    new LoanAccountDialog(_db) { Owner = this }.ShowDialog();
+                    break;
+
+                case NewAccountType.OtherAsset:
+                case NewAccountType.OtherLiability:
+                    new OtherAccountDialog(_db, typeDialog.SelectedType) { Owner = this }.ShowDialog();
+                    break;
+            }
+        }
+
+        private void NewCategory_Click(object sender, RoutedEventArgs e)
+        {
+            new NewCategoryDialog(_db) { Owner = this }.ShowDialog();
         }
 
         private void ToggleLeftPane_Click(object sender, RoutedEventArgs e)

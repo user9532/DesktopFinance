@@ -21,6 +21,7 @@ namespace FinanceApp.Data
         {
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
+            RunMigrations(conn);
             CreateTables(conn);
             SeedVersionRow(conn);
         }
@@ -30,6 +31,32 @@ namespace FinanceApp.Data
             var conn = new SqliteConnection(_connectionString);
             conn.Open();
             return conn;
+        }
+
+        public bool AccountExists(string accountName)
+        {
+            using var conn = OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT COUNT(*) FROM AccountChart WHERE AccountName = @name;", conn);
+            cmd.Parameters.AddWithValue("@name", accountName);
+            return (long)cmd.ExecuteScalar()! > 0;
+        }
+
+        // Runs one-time schema changes for databases created under earlier versions.
+        private static void RunMigrations(SqliteConnection conn)
+        {
+            // Rename RecurPayment -> RecurTrans if the old table still exists.
+            using var checkCmd = new SqliteCommand(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='RecurPayment';",
+                conn);
+            var exists = (long)checkCmd.ExecuteScalar()! > 0;
+
+            if (exists)
+            {
+                using var renameCmd = new SqliteCommand(
+                    "ALTER TABLE RecurPayment RENAME TO RecurTrans;", conn);
+                renameCmd.ExecuteNonQuery();
+            }
         }
 
         private static void CreateTables(SqliteConnection conn)
@@ -85,7 +112,7 @@ namespace FinanceApp.Data
                     Budget   REAL
                 );
 
-                CREATE TABLE IF NOT EXISTS RecurPayment (
+                CREATE TABLE IF NOT EXISTS RecurTrans (
                     Id         INTEGER,
                     Name       TEXT,
                     Amount     REAL,
@@ -96,6 +123,17 @@ namespace FinanceApp.Data
                     NextDue    TEXT,
                     LastPosted TEXT,
                     TrType     INTEGER
+                );
+
+                CREATE TABLE IF NOT EXISTS LoanData (
+                    AccountName TEXT,
+                    Institution TEXT,
+                    StartDate   TEXT,
+                    Principle   REAL,
+                    Interest    REAL,
+                    Term        REAL,
+                    Escrow      REAL,
+                    Pmt         REAL
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
