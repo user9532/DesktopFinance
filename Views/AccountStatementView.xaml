@@ -41,7 +41,15 @@
                   SelectionUnit="FullRow"
                   GridLinesVisibility="Horizontal"
                   AlternatingRowBackground="#FAFAFA"
-                  CellEditEnding="Grid_CellEditEnding">
+                  CellEditEnding="Grid_CellEditEnding"
+                  PreviewMouseRightButtonDown="TrGrid_PreviewMouseRightButtonDown">
+
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Delete…" Click="DeleteRow_Click"/>
+                    <MenuItem Header="Split…"  Click="SplitRow_Click"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
 
             <DataGrid.Columns>
 

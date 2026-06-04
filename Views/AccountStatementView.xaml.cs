@@ -1,4 +1,5 @@
 using FinanceApp.Data;
+using FinanceApp.Dialogs;
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 
 namespace FinanceApp.Views
 {
@@ -321,6 +323,80 @@ namespace FinanceApp.Views
             }
         }
 
+        // ── right-click context menu ──────────────────────────────────────
+
+        // Selects the DataGridRow under the cursor before the context menu opens.
+        private void TrGrid_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var row = FindParent<DataGridRow>(e.OriginalSource as DependencyObject);
+            if (row?.DataContext is TransactionRowViewModel vm)
+                TrGrid.SelectedItem = vm;
+        }
+
+        private void DeleteRow_Click(object sender, RoutedEventArgs e)
+        {
+            if (TrGrid.SelectedItem is not TransactionRowViewModel row) return;
+
+            var confirm = MessageBox.Show(
+                "Are you sure you want to delete this transaction?",
+                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes) return;
+
+            if (!row.IsNew)
+            {
+                using var conn = _db.OpenConnection();
+                using var cmd = new SqliteCommand(
+                    "DELETE FROM Transactions WHERE rowid = @id;", conn);
+                cmd.Parameters.AddWithValue("@id", row.RowId);
+                cmd.ExecuteNonQuery();
+            }
+
+            _allRows.Remove(row);
+            _view.Remove(row);
+            RecalcBalance();
+        }
+
+        private void SplitRow_Click(object sender, RoutedEventArgs e)
+        {
+            if (TrGrid.SelectedItem is not TransactionRowViewModel row) return;
+
+            if (row.IsNew)
+            {
+                MessageBox.Show("Save new rows before splitting.",
+                    "Cannot Split", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (row.MatchedViaCategory)
+            {
+                MessageBox.Show(
+                    "Split is not available for transactions matched via the Category column.",
+                    "Cannot Split", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            // Auto-save any pending edits so the DB is consistent before the split
+            if (_hasChanges) SaveAll();
+
+            var dlg = new SplitTransactionDialog(_db, row, Categories, _account)
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (dlg.ShowDialog() == true)
+                LoadData();   // Reload fresh from DB after the split
+        }
+
+        private static T? FindParent<T>(DependencyObject? child) where T : DependencyObject
+        {
+            while (child != null)
+            {
+                if (child is T t) return t;
+                child = VisualTreeHelper.GetParent(child);
+            }
+            return null;
+        }
+
         // ── window lifecycle / unsaved-changes warnings ───────────────────
 
         private void View_Loaded(object sender, RoutedEventArgs e)
@@ -346,13 +422,29 @@ namespace FinanceApp.Views
             _suppressWarning = false;
         }
 
+        // ── public surface used by MainWindow closing handler ─────────────
+
+        public bool HasUnsavedChanges => _hasChanges;
+
+        public void SaveChanges() => SaveAll();
+
+        // Lets the MainWindow suppress the deactivation-warning while its
+        // own "unsaved changes" dialog is open, preventing a second popup.
+        public void SuppressWarning(bool suppress) => _suppressWarning = suppress;
+
         // Called by the tab's close button before removing the tab
         public bool CanClose()
         {
             if (!_hasChanges) return true;
+
+            // Suppress Window_Deactivated: showing this MessageBox steals focus from the
+            // main window, which would fire Window_Deactivated and produce a second warning.
+            _suppressWarning = true;
             var r = MessageBox.Show(
                 "There are unsaved changes. Do you want to save before closing?",
                 "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+            _suppressWarning = false;
+
             if (r == MessageBoxResult.Yes) { SaveAll(); return true; }
             return r == MessageBoxResult.No;
         }

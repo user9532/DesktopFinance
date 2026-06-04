@@ -1,8 +1,11 @@
 using FinanceApp.Data;
 using FinanceApp.Dialogs;
 using FinanceApp.Views;
+using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
 using System;
+using System.ComponentModel;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -23,9 +26,33 @@ namespace FinanceApp
             _db.InitializeDatabase();
         }
 
-        private void Exit_Click(object sender, RoutedEventArgs e)
+        private void Exit_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            Application.Current.Shutdown();
+            var dirty = MainTabControl.Items
+                .OfType<TabItem>()
+                .Select(t => t.Content as AccountStatementView)
+                .OfType<AccountStatementView>()          // strips nulls, non-nullable
+                .Where(v => v.HasUnsavedChanges)
+                .ToList();
+
+            if (!dirty.Any()) return;
+
+            // Suppress each view's deactivation warning while our dialog is shown.
+            foreach (var v in dirty) v.SuppressWarning(true);
+
+            var result = MessageBox.Show(
+                "There are unsaved changes in one or more account statement tabs.\n\n" +
+                "Do you want to save before exiting?",
+                "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+
+            foreach (var v in dirty) v.SuppressWarning(false);
+
+            if (result == MessageBoxResult.Yes)
+                foreach (var v in dirty) v.SaveChanges();
+            else if (result == MessageBoxResult.Cancel)
+                e.Cancel = true;
         }
 
         private void ImportQfx_Click(object sender, RoutedEventArgs e)
@@ -96,9 +123,82 @@ namespace FinanceApp
             }
         }
 
+        private void EditAccount_Click(object sender, RoutedEventArgs e)
+        {
+            var selectDlg = new EditAccountSelectDialog(_db) { Owner = this };
+            if (selectDlg.ShowDialog() != true) return;
+
+            var account = selectDlg.SelectedAccount;
+
+            if (AccountInTransactions(account))
+            {
+                MessageBox.Show(
+                    "The selected account is already assigned to transactions. Name cannot be changed.",
+                    "Cannot Edit", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            new EditAccountDialog(_db, account) { Owner = this }.ShowDialog();
+        }
+
+        private bool AccountInTransactions(string accountName)
+        {
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT COUNT(*) FROM Transactions " +
+                "WHERE Account = @name OR Category = @name;", conn);
+            cmd.Parameters.AddWithValue("@name", accountName);
+            return (long)cmd.ExecuteScalar()! > 0;
+        }
+
         private void NewCategory_Click(object sender, RoutedEventArgs e)
         {
             new NewCategoryDialog(_db) { Owner = this }.ShowDialog();
+        }
+
+        private void EditCategory_Click(object sender, RoutedEventArgs e)
+        {
+            var selectDlg = new EditCategorySelectDialog(_db) { Owner = this };
+            if (selectDlg.ShowDialog() != true) return;
+
+            var category = selectDlg.SelectedCategory;
+
+            if (AccountInTransactions(category))
+            {
+                MessageBox.Show(
+                    "The selected category is already assigned to transactions. Name cannot be changed.",
+                    "Cannot Edit", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            new EditCategoryDialog(_db, category) { Owner = this }.ShowDialog();
+        }
+
+        private void EnterBudget_Click(object sender, RoutedEventArgs e)
+        {
+            new EnterBudgetDialog(_db) { Owner = this }.ShowDialog();
+        }
+
+        // ── status bar ────────────────────────────────────────────────────
+
+        public void SetStatus(string message) => StatusText.Text = message;
+
+        private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (MainTabControl.SelectedItem is not TabItem tab) return;
+            var header = GetTabHeaderText(tab);
+            StatusText.Text = string.IsNullOrEmpty(header) || header == "Home"
+                ? "Ready"
+                : $"Viewing: {header}";
+        }
+
+        private static string GetTabHeaderText(TabItem tab)
+        {
+            if (tab.Header is string s) return s;
+            if (tab.Header is StackPanel sp)
+                foreach (UIElement child in sp.Children)
+                    if (child is TextBlock tb) return tb.Text;
+            return "";
         }
 
         private void ToggleLeftPane_Click(object sender, RoutedEventArgs e)
