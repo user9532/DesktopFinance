@@ -1,3 +1,4 @@
+using System.IO;
 using FinanceApp.Data;
 using FinanceApp.Dialogs;
 using FinanceApp.Views;
@@ -27,6 +28,74 @@ namespace FinanceApp
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e) => Close();
+
+        private void RestoreBackup_Click(object sender, RoutedEventArgs e)
+        {
+            var openDlg = new OpenFileDialog
+            {
+                Title  = "Select Backup File to Restore",
+                Filter = "Finance Database (*.fdb)|*.fdb|All Files (*.*)|*.*"
+            };
+            if (openDlg.ShowDialog() != true) return;
+
+            var confirm = MessageBox.Show(
+                "Restoring a backup will replace the current database and close all open tabs.\n\n" +
+                "Any unsaved changes will be lost. Continue?",
+                "Confirm Restore", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes) return;
+
+            try
+            {
+                // Close all statement tabs without prompting for saves.
+                var tabs = MainTabControl.Items.OfType<TabItem>()
+                    .Where(t => t.Content is AccountStatementView)
+                    .ToList();
+                foreach (var tab in tabs)
+                {
+                    if (tab.Content is AccountStatementView v)
+                        v.SuppressWarning(true);
+                    MainTabControl.Items.Remove(tab);
+                }
+
+                // Release SQLite connections held by the connection pool.
+                SqliteConnection.ClearAllPools();
+
+                File.Copy(openDlg.FileName, _db.DbPath, overwrite: true);
+                _db.InitializeDatabase();
+
+                MessageBox.Show("Backup restored successfully.",
+                    "Restore Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Restore failed:\n\n{ex.Message}",
+                    "Restore Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private void CreateBackup_Click(object sender, RoutedEventArgs e)
+        {
+            var saveDlg = new SaveFileDialog
+            {
+                Title            = "Save Database Backup",
+                Filter           = "Finance Database (*.fdb)|*.fdb|All Files (*.*)|*.*",
+                FileName         = $"MyFinance_backup_{DateTime.Now:yyyyMMdd_HHmmss}.fdb",
+                DefaultExt       = ".fdb"
+            };
+            if (saveDlg.ShowDialog() != true) return;
+
+            try
+            {
+                File.Copy(_db.DbPath, saveDlg.FileName, overwrite: true);
+                MessageBox.Show($"Backup created successfully:\n{saveDlg.FileName}",
+                    "Backup Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Backup failed:\n\n{ex.Message}",
+                    "Backup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
 
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
@@ -88,9 +157,8 @@ namespace FinanceApp
                 var transactions = importer.ReadTransactions(filePath);
                 importer.ImportTransactions(accountName, transactions);
 
-                // Open Account Statement tab for the imported account
-                var view = new AccountStatementView(_db, accountName);
-                AddClosableTab($"Statement: {accountName}", view, () => view.CanClose());
+                // Activate existing statement tab (refreshed) or open a new one
+                ActivateOrOpenStatement(accountName);
             }
             catch (Exception ex)
             {
@@ -104,23 +172,26 @@ namespace FinanceApp
             var typeDialog = new AccountTypeDialog { Owner = this };
             if (typeDialog.ShowDialog() != true) return;
 
+            bool added = false;
             switch (typeDialog.SelectedType)
             {
                 case NewAccountType.Bank:
                 case NewAccountType.CreditCard:
                 case NewAccountType.Investment:
-                    new StandardAccountDialog(_db, typeDialog.SelectedType) { Owner = this }.ShowDialog();
+                    added = new StandardAccountDialog(_db, typeDialog.SelectedType) { Owner = this }.ShowDialog() == true;
                     break;
 
                 case NewAccountType.Loan:
-                    new LoanAccountDialog(_db) { Owner = this }.ShowDialog();
+                    added = new LoanAccountDialog(_db) { Owner = this }.ShowDialog() == true;
                     break;
 
                 case NewAccountType.OtherAsset:
                 case NewAccountType.OtherLiability:
-                    new OtherAccountDialog(_db, typeDialog.SelectedType) { Owner = this }.ShowDialog();
+                    added = new OtherAccountDialog(_db, typeDialog.SelectedType) { Owner = this }.ShowDialog() == true;
                     break;
             }
+
+            if (added) RefreshAllStatementCategories();
         }
 
         private void EditAccount_Click(object sender, RoutedEventArgs e)
@@ -138,7 +209,8 @@ namespace FinanceApp
                 return;
             }
 
-            new EditAccountDialog(_db, account) { Owner = this }.ShowDialog();
+            if (new EditAccountDialog(_db, account) { Owner = this }.ShowDialog() == true)
+                RefreshAllStatementCategories();
         }
 
         private bool AccountInTransactions(string accountName)
@@ -153,7 +225,8 @@ namespace FinanceApp
 
         private void NewCategory_Click(object sender, RoutedEventArgs e)
         {
-            new NewCategoryDialog(_db) { Owner = this }.ShowDialog();
+            if (new NewCategoryDialog(_db) { Owner = this }.ShowDialog() == true)
+                RefreshAllStatementCategories();
         }
 
         private void EditCategory_Click(object sender, RoutedEventArgs e)
@@ -171,12 +244,44 @@ namespace FinanceApp
                 return;
             }
 
-            new EditCategoryDialog(_db, category) { Owner = this }.ShowDialog();
+            if (new EditCategoryDialog(_db, category) { Owner = this }.ShowDialog() == true)
+                RefreshAllStatementCategories();
         }
 
         private void EnterBudget_Click(object sender, RoutedEventArgs e)
         {
             new EnterBudgetDialog(_db) { Owner = this }.ShowDialog();
+        }
+
+        private void RefreshAllStatementCategories()
+        {
+            foreach (var tab in MainTabControl.Items.OfType<TabItem>())
+                if (tab.Content is AccountStatementView v)
+                    v.RefreshCategories();
+        }
+
+        // ── statement tab helper ──────────────────────────────────────────
+
+        // Activates and refreshes an existing Statement tab for the given account,
+        // or creates a new one if none exists.
+        private void ActivateOrOpenStatement(string account)
+        {
+            var tabHeader = $"Statement: {account}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is AccountStatementView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            // No existing tab — create a new one
+            var view = new AccountStatementView(_db, account);
+            AddClosableTab(tabHeader, view, () => view.CanClose());
         }
 
         // ── status bar ────────────────────────────────────────────────────
@@ -185,11 +290,17 @@ namespace FinanceApp
 
         private void MainTabControl_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
+            // Ignore bubbled SelectionChanged events from controls inside the tab content.
+            if (!e.OriginalSource.Equals(MainTabControl)) return;
+
             if (MainTabControl.SelectedItem is not TabItem tab) return;
             var header = GetTabHeaderText(tab);
             StatusText.Text = string.IsNullOrEmpty(header) || header == "Home"
                 ? "Ready"
                 : $"Viewing: {header}";
+
+            if (tab.Content is AccountStatementView view && !view.HasUnsavedChanges)
+                view.Refresh();
         }
 
         private static string GetTabHeaderText(TabItem tab)
@@ -225,10 +336,7 @@ namespace FinanceApp
             var dlg = new AccountSelectDialog(_db) { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
-            var account = dlg.SelectedAccount;
-            var view    = new AccountStatementView(_db, account);
-
-            AddClosableTab($"Statement: {account}", view, () => view.CanClose());
+            ActivateOrOpenStatement(dlg.SelectedAccount);
         }
 
         // Adds a tab with a close button. canClose (optional) is called before removal;

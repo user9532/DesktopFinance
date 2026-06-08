@@ -15,7 +15,7 @@ namespace FinanceApp.Dialogs
     {
         private readonly DatabaseManager _db;
         private readonly TransactionRowViewModel _row;
-        private readonly List<string> _categories;
+        private readonly IReadOnlyList<string> _categories;
         private readonly string _account;
         private readonly decimal _originalAmount;
 
@@ -24,7 +24,7 @@ namespace FinanceApp.Dialogs
         public SplitTransactionDialog(
             DatabaseManager db,
             TransactionRowViewModel row,
-            List<string> categories,
+            IReadOnlyList<string> categories,
             string account)
         {
             InitializeComponent();

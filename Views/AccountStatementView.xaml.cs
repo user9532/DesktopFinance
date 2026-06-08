@@ -21,7 +21,7 @@ namespace FinanceApp.Views
         private readonly List<TransactionRowViewModel> _allRows = new();
         private ObservableCollection<TransactionRowViewModel> _view = new();
 
-        public List<string> Categories { get; private set; } = new();
+        public ObservableCollection<string> Categories { get; private set; } = new();
 
         private bool _hasChanges;
         private bool _suppressWarning;
@@ -41,6 +41,7 @@ namespace FinanceApp.Views
 
         private void LoadCategories()
         {
+            Categories.Clear();
             using var conn = _db.OpenConnection();
             using var cmd = new SqliteCommand(@"
                 SELECT AccountName FROM AccountChart
@@ -58,6 +59,8 @@ namespace FinanceApp.Views
             using var r = cmd.ExecuteReader();
             while (r.Read()) Categories.Add(r.GetString(0));
         }
+
+        public void RefreshCategories() => LoadCategories();
 
         // ── data load ────────────────────────────────────────────────────
 
@@ -308,19 +311,12 @@ namespace FinanceApp.Views
             _hasChanges = true;
         }
 
-        private void DatePicker_Loaded(object sender, RoutedEventArgs e)
-        {
-            if (sender is DatePicker dp)
-                dp.IsDropDownOpen = true;
-        }
+        private void DatePicker_Loaded(object sender, RoutedEventArgs e) { }
 
         private void CategoryCombo_Loaded(object sender, RoutedEventArgs e)
         {
             if (sender is ComboBox cb)
-            {
-                cb.ItemsSource    = Categories;
-                cb.IsDropDownOpen = true;
-            }
+                cb.ItemsSource = Categories;
         }
 
         // ── right-click context menu ──────────────────────────────────────
@@ -427,6 +423,9 @@ namespace FinanceApp.Views
         public bool HasUnsavedChanges => _hasChanges;
 
         public void SaveChanges() => SaveAll();
+
+        // Reloads data from the database (called when the tab is re-activated).
+        public void Refresh() => LoadData();
 
         // Lets the MainWindow suppress the deactivation-warning while its
         // own "unsaved changes" dialog is open, preventing a second popup.

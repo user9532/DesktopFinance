@@ -21,7 +21,14 @@ namespace FinanceApp.Dialogs
             using var cmd = new SqliteCommand(
                 "SELECT AccountName FROM AccountChart " +
                 "WHERE AccountGroup IN ('Asset','Liability') " +
-                "ORDER BY AccountName;", conn);
+                "ORDER BY CASE AccountType " +
+                "  WHEN 'Bank'        THEN 1 " +
+                "  WHEN 'Credit Card' THEN 2 " +
+                "  WHEN 'Investment'  THEN 3 " +
+                "  WHEN 'Asset'       THEN 4 " +
+                "  WHEN 'Loan'        THEN 5 " +
+                "  ELSE 6 END, " +
+                "AccountName;", conn);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
                 LbAccounts.Items.Add(reader.GetString(0));

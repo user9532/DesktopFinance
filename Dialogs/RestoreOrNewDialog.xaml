@@ -1,0 +1,26 @@
+<Window x:Class="FinanceApp.Dialogs.RestoreOrNewDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="No Database Found"
+        Width="400" SizeToContent="Height"
+        ResizeMode="NoResize"
+        WindowStartupLocation="CenterScreen">
+
+    <StackPanel Margin="24,20,24,24">
+        <TextBlock TextWrapping="Wrap" FontSize="14" FontWeight="SemiBold"
+                   Text="No database file was found."
+                   Margin="0,0,0,8"/>
+        <TextBlock TextWrapping="Wrap"
+                   Text="Would you like to restore from a backup file, or start with a new blank database?"
+                   Margin="0,0,0,20"/>
+
+        <Button x:Name="RestoreBtn"
+                Content="Restore from Backup…"
+                Height="32" Margin="0,0,0,8"
+                Click="RestoreBtn_Click"/>
+        <Button x:Name="NewBtn"
+                Content="Start New Database"
+                Height="32"
+                Click="NewBtn_Click"/>
+    </StackPanel>
+</Window>

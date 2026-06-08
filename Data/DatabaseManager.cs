@@ -13,9 +13,11 @@ namespace FinanceApp.Data
             var appFolder = AppDomain.CurrentDomain.BaseDirectory;
             var dbFolder = Path.Combine(appFolder, "Database");
             Directory.CreateDirectory(dbFolder);
-            var dbPath = Path.Combine(dbFolder, "MyFinance.fdb");
-            _connectionString = $"Data Source={dbPath}";
+            DbPath = Path.Combine(dbFolder, "MyFinance.fdb");
+            _connectionString = $"Data Source={DbPath}";
         }
+
+        public string DbPath { get; }
 
         public void InitializeDatabase()
         {
