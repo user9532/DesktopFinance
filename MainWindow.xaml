@@ -46,6 +46,11 @@
                 <Separator/>
                 <MenuItem Header="Enter _Budget"  Click="EnterBudget_Click"/>
             </MenuItem>
+            <MenuItem Header="_Reports">
+                <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>
+                <MenuItem Header="_Budget vs Actual"     Click="BudgetActual_Click"/>
+                <MenuItem Header="_Drilldown Category"   Click="DrilldownCategory_Click"/>
+            </MenuItem>
         </Menu>
 
         <!-- Status bar — must appear before the fill Grid in DockPanel order -->

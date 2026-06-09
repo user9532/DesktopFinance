@@ -1,0 +1,149 @@
+<UserControl x:Class="FinanceApp.Views.BudgetActualView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DockPanel>
+
+        <!-- ── Toolbar ───────────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1"
+                Padding="6,5">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Export" Width="80" Click="Export_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Report body ───────────────────────────────────────────────── -->
+        <ScrollViewer VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Auto">
+            <StackPanel x:Name="ReportPanel" Margin="40,24,40,24" MaxWidth="740">
+
+                <!-- Header -->
+                <TextBlock Text="Budget versus Actual"
+                           FontSize="16" FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,4"/>
+                <TextBlock x:Name="TbPeriod"
+                           FontSize="13"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,20"/>
+
+                <!-- Column headers -->
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="110"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Category"  FontWeight="Bold"/>
+                    <TextBlock Grid.Column="1" Text="Budget"    FontWeight="Bold" HorizontalAlignment="Right"/>
+                    <TextBlock Grid.Column="2" Text="Actual"    FontWeight="Bold" HorizontalAlignment="Right"/>
+                    <TextBlock Grid.Column="3" Text="Variance"  FontWeight="Bold" HorizontalAlignment="Right"/>
+                </Grid>
+                <Separator Margin="0,0,0,6"/>
+
+                <!-- Income section -->
+                <TextBlock Text="Income"
+                           FontSize="13" FontWeight="Bold"
+                           Margin="0,0,0,4"/>
+                <ItemsControl x:Name="IncomeList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="110"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Name}"           Margin="12,0,0,0"/>
+                                <TextBlock Grid.Column="1" Text="{Binding BudgetDisplay}"  HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Text="{Binding ActualDisplay}"  HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="{Binding VarianceDisplay}" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Total Income -->
+                <Grid Margin="0,4,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="110"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Total Income" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="TbIncomeBudget"  Grid.Column="1" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="TbIncomeActual"  Grid.Column="2" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="TbIncomeVariance" Grid.Column="3" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                </Grid>
+
+                <Separator Margin="0,0,0,12"/>
+
+                <!-- Expense section -->
+                <TextBlock Text="Expenses"
+                           FontSize="13" FontWeight="Bold"
+                           Margin="0,0,0,4"/>
+                <ItemsControl x:Name="ExpenseList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Grid Margin="0,1">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="110"/>
+                                    <ColumnDefinition Width="110"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Grid.Column="0" Text="{Binding Name}"            Margin="12,0,0,0"/>
+                                <TextBlock Grid.Column="1" Text="{Binding BudgetDisplay}"   HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="2" Text="{Binding ActualDisplay}"   HorizontalAlignment="Right"/>
+                                <TextBlock Grid.Column="3" Text="{Binding VarianceDisplay}" HorizontalAlignment="Right"/>
+                            </Grid>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Total Expenses -->
+                <Grid Margin="0,4,0,12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="110"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Total Expenses" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="TbExpenseBudget"   Grid.Column="1" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="TbExpenseActual"   Grid.Column="2" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="TbExpenseVariance" Grid.Column="3" FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                </Grid>
+
+                <Separator Margin="0,0,0,8"/>
+
+                <!-- Excess income over expenses -->
+                <Grid Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="110"/>
+                        <ColumnDefinition Width="110"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Excess income over expenses" FontWeight="Bold"/>
+                    <Border Grid.Column="1" BorderBrush="Black" BorderThickness="0,0,0,2" HorizontalAlignment="Right">
+                        <TextBlock x:Name="TbExcessBudget"   FontWeight="Bold" HorizontalAlignment="Right"/>
+                    </Border>
+                    <Border Grid.Column="2" BorderBrush="Black" BorderThickness="0,0,0,2" HorizontalAlignment="Right">
+                        <TextBlock x:Name="TbExcessActual"   FontWeight="Bold" HorizontalAlignment="Right"/>
+                    </Border>
+                    <Border Grid.Column="3" BorderBrush="Black" BorderThickness="0,0,0,2" HorizontalAlignment="Right">
+                        <TextBlock x:Name="TbExcessVariance" FontWeight="Bold" HorizontalAlignment="Right"/>
+                    </Border>
+                </Grid>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

@@ -1,0 +1,97 @@
+<UserControl x:Class="FinanceApp.Views.DrilldownCategoryView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DockPanel>
+
+        <!-- ── Toolbar ───────────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1"
+                Padding="6,5">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock x:Name="TbHeader"
+                               FontSize="13" FontWeight="SemiBold"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+                    <Button Content="Export" Width="80" Click="Export_Click"/>
+                </StackPanel>
+            </DockPanel>
+        </Border>
+
+        <!-- ── Grid ──────────────────────────────────────────────────────── -->
+        <DataGrid x:Name="TrGrid"
+                  AutoGenerateColumns="False"
+                  CanUserSortColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True"
+                  SelectionUnit="FullRow"
+                  GridLinesVisibility="Horizontal"
+                  AlternatingRowBackground="#FAFAFA">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Date"
+                                    Binding="{Binding DateDisplay}"
+                                    Width="100"/>
+
+                <DataGridTextColumn Header="Check No"
+                                    Binding="{Binding CheckNo}"
+                                    Width="80"/>
+
+                <DataGridTextColumn Header="Account"
+                                    Binding="{Binding Account}"
+                                    Width="150"/>
+
+                <DataGridTextColumn Header="Name"
+                                    Binding="{Binding Name}"
+                                    Width="160"/>
+
+                <DataGridCheckBoxColumn Header="Clear"
+                                        Binding="{Binding Clear}"
+                                        Width="48"
+                                        IsReadOnly="True"/>
+
+                <DataGridTextColumn Header="Debit"
+                                    Binding="{Binding DebitDisplay}"
+                                    Width="100">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Credit"
+                                    Binding="{Binding CreditDisplay}"
+                                    Width="100">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Balance"
+                                    Binding="{Binding BalanceDisplay}"
+                                    Width="110">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Memo"
+                                    Binding="{Binding Memo}"
+                                    Width="200"/>
+
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

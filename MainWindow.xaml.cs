@@ -167,6 +167,36 @@ namespace FinanceApp
             }
         }
 
+        private void IncomeExpenses_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new IncomeExpensesDateDialog { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            var view   = new IncomeExpensesView(_db, dlg.StartDate, dlg.EndDate);
+            var header = $"Income & Expenses  {dlg.StartDate:MM/dd/yyyy}–{dlg.EndDate:MM/dd/yyyy}";
+            AddClosableTab(header, view);
+        }
+
+        private void DrilldownCategory_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new DrilldownCategoryDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            var view   = new DrilldownCategoryView(_db, dlg.SelectedCategory);
+            var header = $"Drilldown: {dlg.SelectedCategory}";
+            AddClosableTab(header, view);
+        }
+
+        private void BudgetActual_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new IncomeExpensesDateDialog { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            var view   = new BudgetActualView(_db, dlg.StartDate, dlg.EndDate);
+            var header = $"Budget vs Actual  {dlg.StartDate:MM/dd/yyyy}–{dlg.EndDate:MM/dd/yyyy}";
+            AddClosableTab(header, view);
+        }
+
         private void NewAccount_Click(object sender, RoutedEventArgs e)
         {
             var typeDialog = new AccountTypeDialog { Owner = this };
