@@ -167,6 +167,11 @@ namespace FinanceApp
             }
         }
 
+        private void AddSecurities_Click(object sender, RoutedEventArgs e)
+        {
+            new AddSecurityDialog(_db) { Owner = this }.ShowDialog();
+        }
+
         private void IncomeExpenses_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new IncomeExpensesDateDialog { Owner = this };

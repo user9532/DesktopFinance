@@ -136,6 +136,17 @@ namespace FinanceApp.Data
                     Term        REAL,
                     Escrow      REAL,
                     Pmt         REAL
+                );
+
+                CREATE TABLE IF NOT EXISTS Securities (
+                    Symbol      TEXT,
+                    Description TEXT
+                );
+
+                CREATE TABLE IF NOT EXISTS Quotes (
+                    Date   TEXT,
+                    Symbol TEXT,
+                    Price  REAL
                 );";
 
             using var cmd = new SqliteCommand(sql, conn);
