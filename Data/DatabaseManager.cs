@@ -59,6 +59,31 @@ namespace FinanceApp.Data
                     "ALTER TABLE RecurPayment RENAME TO RecurTrans;", conn);
                 renameCmd.ExecuteNonQuery();
             }
+
+            // Add split columns to Securities if they don't exist yet.
+            AddColumnIfMissing(conn, "Securities", "IsSplit",    "INTEGER");
+            AddColumnIfMissing(conn, "Securities", "SplitDate",  "TEXT");
+            AddColumnIfMissing(conn, "Securities", "SplitRatio", "REAL");
+
+            // Unique index on Quotes(Date, Symbol) to support INSERT OR REPLACE upsert.
+            using var idxCmd = new SqliteCommand(
+                "CREATE UNIQUE INDEX IF NOT EXISTS ux_quotes_date_symbol ON Quotes (Date, Symbol);",
+                conn);
+            idxCmd.ExecuteNonQuery();
+        }
+
+        private static void AddColumnIfMissing(SqliteConnection conn,
+            string table, string column, string type)
+        {
+            using var infoCmd = new SqliteCommand(
+                $"PRAGMA table_info({table});", conn);
+            using var r = infoCmd.ExecuteReader();
+            while (r.Read())
+                if (r.GetString(1) == column) return;
+
+            using var alterCmd = new SqliteCommand(
+                $"ALTER TABLE {table} ADD COLUMN {column} {type};", conn);
+            alterCmd.ExecuteNonQuery();
         }
 
         private static void CreateTables(SqliteConnection conn)
@@ -140,7 +165,10 @@ namespace FinanceApp.Data
 
                 CREATE TABLE IF NOT EXISTS Securities (
                     Symbol      TEXT,
-                    Description TEXT
+                    Description TEXT,
+                    IsSplit     INTEGER,
+                    SplitDate   TEXT,
+                    SplitRatio  REAL
                 );
 
                 CREATE TABLE IF NOT EXISTS Quotes (
