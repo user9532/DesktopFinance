@@ -1,0 +1,93 @@
+<UserControl x:Class="FinanceApp.Views.InvestmentStatementView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DockPanel>
+
+        <!-- ── toolbar ────────────────────────────────────────────────── -->
+        <Border DockPanel.Dock="Top"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1"
+                Padding="6,5">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Transaction" Width="90" Margin="0,0,8,0" Click="Transaction_Click"/>
+                <Button Content="Trade"       Width="70" Click="Trade_Click"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ── investment grid ────────────────────────────────────────── -->
+        <DataGrid x:Name="TrGrid"
+                  AutoGenerateColumns="False"
+                  CanUserSortColumns="False"
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="False"
+                  IsReadOnly="True"
+                  SelectionUnit="FullRow"
+                  GridLinesVisibility="Horizontal"
+                  AlternatingRowBackground="#FAFAFA">
+
+            <DataGrid.Columns>
+
+                <DataGridTextColumn Header="Date"       Binding="{Binding Date}"       Width="90"/>
+                <DataGridTextColumn Header="Check No"   Binding="{Binding CheckNo}"    Width="80"/>
+                <DataGridTextColumn Header="Name"       Binding="{Binding Name}"       Width="140"/>
+                <DataGridTextColumn Header="Category"   Binding="{Binding Category}"   Width="130"/>
+                <DataGridTextColumn Header="Memo"       Binding="{Binding Memo}"       Width="140"/>
+                <DataGridTextColumn Header="Action"     Binding="{Binding Action}"     Width="70"/>
+                <DataGridTextColumn Header="Symbol"     Binding="{Binding Symbol}"     Width="70"/>
+
+                <DataGridTextColumn Header="Quantity"   Width="80"
+                                    Binding="{Binding Quantity, StringFormat=N4}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Margin" Value="0,0,4,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Price"      Width="80"
+                                    Binding="{Binding Price, StringFormat=N4}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Margin" Value="0,0,4,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Commission" Width="84"
+                                    Binding="{Binding Commission, StringFormat=N2}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Margin" Value="0,0,4,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Amount"  Width="90"
+                                    Binding="{Binding AmountDisplay}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Margin" Value="0,0,4,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="Balance" Width="90"
+                                    Binding="{Binding Balance, StringFormat=N2}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Margin" Value="0,0,4,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+            </DataGrid.Columns>
+        </DataGrid>
+    </DockPanel>
+</UserControl>

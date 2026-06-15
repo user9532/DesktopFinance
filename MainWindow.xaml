@@ -47,8 +47,10 @@
                 <MenuItem Header="Enter _Budget"  Click="EnterBudget_Click"/>
             </MenuItem>
             <MenuItem Header="_Investment">
-                <MenuItem Header="_Add Securities" Click="AddSecurities_Click"/>
-                <MenuItem Header="_Add Quotes"     Click="AddQuotes_Click"/>
+                <MenuItem Header="_Add Securities"       Click="AddSecurities_Click"/>
+                <MenuItem Header="_Add Quotes"           Click="AddQuotes_Click"/>
+                <Separator/>
+                <MenuItem Header="_Investment Statement" Click="InvestmentStatement_Click"/>
             </MenuItem>
             <MenuItem Header="_Reports">
                 <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>

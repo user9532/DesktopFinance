@@ -177,6 +177,27 @@ namespace FinanceApp
             new AddQuoteDialog(_db) { Owner = this }.ShowDialog();
         }
 
+        private void InvestmentStatement_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new InvestmentAccountSelectDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            var account = dlg.SelectedAccount!;
+            var header  = $"Investment: {account}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (GetTabHeaderText(item) == header)
+                {
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new InvestmentStatementView(_db, account);
+            AddClosableTab(header, view);
+        }
+
         private void IncomeExpenses_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new IncomeExpensesDateDialog { Owner = this };
