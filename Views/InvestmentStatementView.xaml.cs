@@ -70,6 +70,8 @@ namespace FinanceApp.Views
             TrGrid.ItemsSource = rows;
         }
 
+        public void Refresh() => LoadData();
+
         private void Transaction_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Dialogs.InvestmentTransactionDialog(_db, _account)

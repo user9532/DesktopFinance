@@ -362,6 +362,8 @@ namespace FinanceApp
 
             if (tab.Content is AccountStatementView view && !view.HasUnsavedChanges)
                 view.Refresh();
+            else if (tab.Content is InvestmentStatementView invView)
+                invView.Refresh();
         }
 
         private static string GetTabHeaderText(TabItem tab)
