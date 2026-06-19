@@ -60,16 +60,26 @@ namespace FinanceApp.Data
                 renameCmd.ExecuteNonQuery();
             }
 
-            // Add split columns to Securities if they don't exist yet.
-            AddColumnIfMissing(conn, "Securities", "IsSplit",    "INTEGER");
-            AddColumnIfMissing(conn, "Securities", "SplitDate",  "TEXT");
-            AddColumnIfMissing(conn, "Securities", "SplitRatio", "REAL");
+            // Add split columns to Securities if the table and columns don't exist yet.
+            using var secCheck = new SqliteCommand(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Securities';", conn);
+            if ((long)secCheck.ExecuteScalar()! > 0)
+            {
+                AddColumnIfMissing(conn, "Securities", "IsSplit",    "INTEGER");
+                AddColumnIfMissing(conn, "Securities", "SplitDate",  "TEXT");
+                AddColumnIfMissing(conn, "Securities", "SplitRatio", "REAL");
+            }
 
-            // Unique index on Quotes(Date, Symbol) to support INSERT OR REPLACE upsert.
-            using var idxCmd = new SqliteCommand(
-                "CREATE UNIQUE INDEX IF NOT EXISTS ux_quotes_date_symbol ON Quotes (Date, Symbol);",
-                conn);
-            idxCmd.ExecuteNonQuery();
+            // Unique index on Quotes(Date, Symbol) — only if Quotes table already exists.
+            using var quotesCheck = new SqliteCommand(
+                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Quotes';", conn);
+            if ((long)quotesCheck.ExecuteScalar()! > 0)
+            {
+                using var idxCmd = new SqliteCommand(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_quotes_date_symbol ON Quotes (Date, Symbol);",
+                    conn);
+                idxCmd.ExecuteNonQuery();
+            }
         }
 
         private static void AddColumnIfMissing(SqliteConnection conn,

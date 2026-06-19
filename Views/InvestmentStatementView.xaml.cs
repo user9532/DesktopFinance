@@ -91,6 +91,30 @@ namespace FinanceApp.Views
             dlg.ShowDialog();
             LoadData();
         }
+
+        private void Portfolio_Click(object sender, RoutedEventArgs e)
+        {
+            string portfolio = "";
+            using (var conn = _db.OpenConnection())
+            using (var cmd = new Microsoft.Data.Sqlite.SqliteCommand(
+                "SELECT Portfolio FROM AccountChart WHERE AccountName = @acct LIMIT 1;", conn))
+            {
+                cmd.Parameters.AddWithValue("@acct", _account);
+                portfolio = cmd.ExecuteScalar() as string ?? "";
+            }
+
+            if (string.IsNullOrEmpty(portfolio))
+            {
+                System.Windows.MessageBox.Show(
+                    "No portfolio is associated with this investment account.",
+                    "Portfolio", System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+                return;
+            }
+
+            if (Window.GetWindow(this) is MainWindow main)
+                main.ActivateOrOpenPortfolio(portfolio);
+        }
     }
 
     public class InvestmentRowViewModel

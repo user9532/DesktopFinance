@@ -12,7 +12,8 @@
                 Padding="6,5">
             <StackPanel Orientation="Horizontal">
                 <Button Content="Transaction" Width="90" Margin="0,0,8,0" Click="Transaction_Click"/>
-                <Button Content="Trade"       Width="70" Click="Trade_Click"/>
+                <Button Content="Trade"       Width="70" Margin="0,0,8,0" Click="Trade_Click"/>
+                <Button Content="Portfolio"   Width="80" Click="Portfolio_Click"/>
             </StackPanel>
         </Border>
 

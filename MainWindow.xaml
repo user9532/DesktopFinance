@@ -51,6 +51,9 @@
                 <MenuItem Header="_Add Quotes"           Click="AddQuotes_Click"/>
                 <Separator/>
                 <MenuItem Header="_Investment Statement" Click="InvestmentStatement_Click"/>
+                <MenuItem Header="_Portfolio Statement"  Click="PortfolioStatement_Click"/>
+                <Separator/>
+                <MenuItem Header="_Stock Split"          Click="StockSplit_Click"/>
             </MenuItem>
             <MenuItem Header="_Reports">
                 <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>

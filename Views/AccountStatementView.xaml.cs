@@ -253,12 +253,13 @@ namespace FinanceApp.Views
                 cmd.ExecuteNonQuery();
             }
 
-            // Update CatHistory when an account-matched row has a memo and category
+            // Update CatHistory keyed on Name when an account-matched row has a name and category
+            var cleanName = CleanText(row.Name);
             if (!row.MatchedViaCategory
-                && !string.IsNullOrWhiteSpace(cleanMemo)
+                && !string.IsNullOrWhiteSpace(cleanName)
                 && !string.IsNullOrWhiteSpace(row.DisplayCategory))
             {
-                UpdateCatHistory(conn, cleanMemo, row.DisplayCategory);
+                UpdateCatHistory(conn, cleanName, row.DisplayCategory, amount);
             }
 
             row.OriginalCategory = row.DisplayCategory;
@@ -266,27 +267,29 @@ namespace FinanceApp.Views
             row.IsNew   = false;
         }
 
-        private static void UpdateCatHistory(SqliteConnection conn, string memo, string category)
+        private static void UpdateCatHistory(SqliteConnection conn, string name, string category, decimal amount)
         {
             using var chk = new SqliteCommand(
                 "SELECT Category FROM CatHistory WHERE Description=@d;", conn);
-            chk.Parameters.AddWithValue("@d", memo);
+            chk.Parameters.AddWithValue("@d", name);
             var existing = chk.ExecuteScalar() as string;
 
             if (existing is null)
             {
                 using var ins = new SqliteCommand(
-                    "INSERT INTO CatHistory(Description,Category) VALUES(@d,@c);", conn);
-                ins.Parameters.AddWithValue("@d", memo);
+                    "INSERT INTO CatHistory(Description,Category,Amount) VALUES(@d,@c,@a);", conn);
+                ins.Parameters.AddWithValue("@d", name);
                 ins.Parameters.AddWithValue("@c", category);
+                ins.Parameters.AddWithValue("@a", (double)amount);
                 ins.ExecuteNonQuery();
             }
-            else if (existing != category)
+            else
             {
                 using var upd = new SqliteCommand(
-                    "UPDATE CatHistory SET Category=@c WHERE Description=@d;", conn);
-                upd.Parameters.AddWithValue("@d", memo);
+                    "UPDATE CatHistory SET Category=@c, Amount=@a WHERE Description=@d;", conn);
+                upd.Parameters.AddWithValue("@d", name);
                 upd.Parameters.AddWithValue("@c", category);
+                upd.Parameters.AddWithValue("@a", (double)amount);
                 upd.ExecuteNonQuery();
             }
         }
@@ -298,12 +301,43 @@ namespace FinanceApp.Views
 
         private void Grid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
         {
-            if (e.EditAction == DataGridEditAction.Commit)
+            if (e.EditAction != DataGridEditAction.Commit) return;
+
+            _hasChanges = true;
+
+            // When the Name column commits on a new row, look up CatHistory
+            // and auto-fill Category and Payment/Deposit from the last known entry.
+            if (e.Column == TrGrid.Columns[2]
+                && e.Row.DataContext is TransactionRowViewModel row
+                && row.IsNew)
             {
-                _hasChanges = true;
-                // Recalculate balance after any edit (Payment/Deposit may have changed)
-                Dispatcher.BeginInvoke(new Action(RecalcBalance));
+                Dispatcher.BeginInvoke(new Action(() => AutoFillFromCatHistory(row)));
             }
+
+            // Recalculate balance after any edit (Payment/Deposit may have changed)
+            Dispatcher.BeginInvoke(new Action(RecalcBalance));
+        }
+
+        private void AutoFillFromCatHistory(TransactionRowViewModel row)
+        {
+            var name = row.Name?.Trim();
+            if (string.IsNullOrEmpty(name)) return;
+
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT Category, Amount FROM CatHistory WHERE Description = @d LIMIT 1;", conn);
+            cmd.Parameters.AddWithValue("@d", name);
+            using var r = cmd.ExecuteReader();
+            if (!r.Read()) return;
+
+            var cat = r.IsDBNull(0) ? "" : r.GetString(0);
+            var amt = r.IsDBNull(1) ? 0m : (decimal)r.GetDouble(1);
+
+            if (!string.IsNullOrEmpty(cat))
+                row.DisplayCategory = cat;
+
+            if (amt > 0 && row.PaymentDecimal == 0 && row.DepositDecimal == 0)
+                row.Payment = amt.ToString("N2");
         }
 
         private void Clear_Click(object sender, RoutedEventArgs e)

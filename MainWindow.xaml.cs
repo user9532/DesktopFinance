@@ -198,6 +198,60 @@ namespace FinanceApp
             AddClosableTab(header, view);
         }
 
+        private void StockSplit_Click(object sender, RoutedEventArgs e)
+        {
+            new StockSplitDialog(_db) { Owner = this }.ShowDialog();
+        }
+
+        private void PortfolioStatement_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new PortfolioSelectDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+            ActivateOrOpenPortfolio(dlg.SelectedPortfolio!);
+        }
+
+        public void ActivateOrOpenInvestmentStatement(string portfolio)
+        {
+            string account = "";
+            using (var conn = _db.OpenConnection())
+            using (var cmd = new SqliteCommand(
+                "SELECT AccountName FROM AccountChart WHERE Portfolio = @p AND AccountCode = 2 LIMIT 1;", conn))
+            {
+                cmd.Parameters.AddWithValue("@p", portfolio);
+                account = cmd.ExecuteScalar() as string ?? "";
+            }
+            if (string.IsNullOrEmpty(account)) return;
+
+            var header = $"Investment: {account}";
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (GetTabHeaderText(item) == header)
+                {
+                    (item.Content as InvestmentStatementView)?.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+            var view = new InvestmentStatementView(_db, account);
+            AddClosableTab(header, view);
+        }
+
+        public void ActivateOrOpenPortfolio(string portfolio)
+        {
+            var header = $"Portfolio: {portfolio}";
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (GetTabHeaderText(item) == header)
+                {
+                    (item.Content as PortfolioView)?.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+            var view = new PortfolioView(_db, portfolio);
+            AddClosableTab(header, view);
+        }
+
         private void IncomeExpenses_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new IncomeExpensesDateDialog { Owner = this };
@@ -364,6 +418,8 @@ namespace FinanceApp
                 view.Refresh();
             else if (tab.Content is InvestmentStatementView invView)
                 invView.Refresh();
+            else if (tab.Content is PortfolioView pfView)
+                pfView.Refresh();
         }
 
         private static string GetTabHeaderText(TabItem tab)
