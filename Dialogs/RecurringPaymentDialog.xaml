@@ -1,0 +1,92 @@
+<Window x:Class="FinanceApp.Dialogs.RecurringPaymentDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Set Up Recurring Payment"
+        Height="520" Width="780"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        ShowInTaskbar="False"
+        MinHeight="420" MinWidth="680">
+
+    <DockPanel Margin="16,14,16,14">
+
+        <!-- Common fields: Account, Next Due, Frequency -->
+        <Grid DockPanel.Dock="Top">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="200"/>
+                <ColumnDefinition Width="24"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="140"/>
+                <ColumnDefinition Width="24"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="140"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Column="0" Text="Bank Account:" VerticalAlignment="Center"/>
+            <ComboBox  Grid.Column="2" x:Name="CbAccount" VerticalAlignment="Center"/>
+
+            <TextBlock Grid.Column="4" Text="Next Due Date:" VerticalAlignment="Center"/>
+            <DatePicker Grid.Column="6" x:Name="DpNextDue" VerticalAlignment="Center"/>
+
+            <TextBlock Grid.Column="8" Text="Frequency:" VerticalAlignment="Center"/>
+            <ComboBox  Grid.Column="10" x:Name="CbFrequency" VerticalAlignment="Center">
+                <ComboBoxItem Content="Daily"       Tag="1"/>
+                <ComboBoxItem Content="Weekly"      Tag="7"/>
+                <ComboBoxItem Content="Bi-Weekly"   Tag="14"/>
+                <ComboBoxItem Content="Monthly"     Tag="30"/>
+                <ComboBoxItem Content="Quarterly"   Tag="90"/>
+                <ComboBoxItem Content="Semi-Annual" Tag="180"/>
+                <ComboBoxItem Content="Annual"      Tag="365"/>
+            </ComboBox>
+        </Grid>
+
+        <Rectangle DockPanel.Dock="Top" Height="12" Fill="Transparent"/>
+
+        <!-- Column headers for the line items -->
+        <Grid DockPanel.Dock="Top" Margin="0,0,0,4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="90"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="160"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="180"/>
+                <ColumnDefinition Width="8"/>
+                <ColumnDefinition Width="80"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" Text="Payee Name"  FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="2" Text="Amount"      FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="4" Text="Memo"        FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="6" Text="Category"    FontWeight="SemiBold"/>
+        </Grid>
+
+        <!-- Scrollable lines area -->
+        <Border DockPanel.Dock="Top" BorderBrush="#CCCCCC" BorderThickness="1"
+                Height="240">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="LinesPanel"/>
+            </ScrollViewer>
+        </Border>
+
+        <Rectangle DockPanel.Dock="Top" Height="8" Fill="Transparent"/>
+
+        <!-- Add New button -->
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
+            <Button Content="Add New" Width="90" Click="AddNew_Click"/>
+        </StackPanel>
+
+        <!-- Save / Cancel pinned to bottom -->
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,10,0,0">
+            <Button Content="Save"   Width="80" IsDefault="True" Margin="0,0,8,0" Click="Save_Click"/>
+            <Button Content="Cancel" Width="80" IsCancel="True"  Click="Cancel_Click"/>
+        </StackPanel>
+
+        <Rectangle Fill="Transparent"/>
+    </DockPanel>
+</Window>

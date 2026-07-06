@@ -2,9 +2,7 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:FinanceApp.Views"
-             x:Name="Root"
-             Loaded="View_Loaded"
-             Unloaded="View_Unloaded">
+             x:Name="Root">
 
     <DockPanel>
 
@@ -110,18 +108,49 @@
                 <!-- Payment -->
                 <DataGridTextColumn Header="Payment"
                                     Binding="{Binding Payment, UpdateSourceTrigger=PropertyChanged}"
-                                    Width="100"/>
+                                    Width="100">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Margin" Value="0,0,4,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>
 
                 <!-- Deposit -->
                 <DataGridTextColumn Header="Deposit"
                                     Binding="{Binding Deposit, UpdateSourceTrigger=PropertyChanged}"
-                                    Width="100"/>
+                                    Width="100">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Margin" Value="0,0,4,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
+                </DataGridTextColumn>
 
                 <!-- Balance (read-only) -->
                 <DataGridTextColumn Header="Balance"
                                     Binding="{Binding Balance, StringFormat=N2}"
                                     Width="100"
-                                    IsReadOnly="True"/>
+                                    IsReadOnly="True">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="HorizontalAlignment" Value="Right"/>
+                            <Setter Property="Margin" Value="0,0,4,0"/>
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
 
                 <!-- Memo -->
                 <DataGridTextColumn Header="Memo"

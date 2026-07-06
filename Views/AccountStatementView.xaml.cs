@@ -24,7 +24,6 @@ namespace FinanceApp.Views
         public ObservableCollection<string> Categories { get; private set; } = new();
 
         private bool _hasChanges;
-        private bool _suppressWarning;
 
         public AccountStatementView(DatabaseManager db, string account)
         {
@@ -427,31 +426,6 @@ namespace FinanceApp.Views
             return null;
         }
 
-        // ── window lifecycle / unsaved-changes warnings ───────────────────
-
-        private void View_Loaded(object sender, RoutedEventArgs e)
-        {
-            var w = Window.GetWindow(this);
-            if (w != null) w.Deactivated += Window_Deactivated;
-        }
-
-        private void View_Unloaded(object sender, RoutedEventArgs e)
-        {
-            var w = Window.GetWindow(this);
-            if (w != null) w.Deactivated -= Window_Deactivated;
-        }
-
-        private void Window_Deactivated(object? sender, EventArgs e)
-        {
-            if (!_hasChanges || _suppressWarning) return;
-            _suppressWarning = true;
-            var r = MessageBox.Show(
-                "There are unsaved changes. Do you want to save them now?",
-                "Unsaved Changes", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (r == MessageBoxResult.Yes) SaveAll();
-            _suppressWarning = false;
-        }
-
         // ── public surface used by MainWindow closing handler ─────────────
 
         public bool HasUnsavedChanges => _hasChanges;
@@ -461,22 +435,14 @@ namespace FinanceApp.Views
         // Reloads data from the database (called when the tab is re-activated).
         public void Refresh() => LoadData();
 
-        // Lets the MainWindow suppress the deactivation-warning while its
-        // own "unsaved changes" dialog is open, preventing a second popup.
-        public void SuppressWarning(bool suppress) => _suppressWarning = suppress;
-
         // Called by the tab's close button before removing the tab
         public bool CanClose()
         {
             if (!_hasChanges) return true;
 
-            // Suppress Window_Deactivated: showing this MessageBox steals focus from the
-            // main window, which would fire Window_Deactivated and produce a second warning.
-            _suppressWarning = true;
             var r = MessageBox.Show(
                 "There are unsaved changes. Do you want to save before closing?",
                 "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
-            _suppressWarning = false;
 
             if (r == MessageBoxResult.Yes) { SaveAll(); return true; }
             return r == MessageBoxResult.No;

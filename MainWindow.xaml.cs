@@ -51,11 +51,7 @@ namespace FinanceApp
                     .Where(t => t.Content is AccountStatementView)
                     .ToList();
                 foreach (var tab in tabs)
-                {
-                    if (tab.Content is AccountStatementView v)
-                        v.SuppressWarning(true);
                     MainTabControl.Items.Remove(tab);
-                }
 
                 // Release SQLite connections held by the connection pool.
                 SqliteConnection.ClearAllPools();
@@ -108,15 +104,10 @@ namespace FinanceApp
 
             if (!dirty.Any()) return;
 
-            // Suppress each view's deactivation warning while our dialog is shown.
-            foreach (var v in dirty) v.SuppressWarning(true);
-
             var result = MessageBox.Show(
                 "There are unsaved changes in one or more account statement tabs.\n\n" +
                 "Do you want to save before exiting?",
                 "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
-
-            foreach (var v in dirty) v.SuppressWarning(false);
 
             if (result == MessageBoxResult.Yes)
                 foreach (var v in dirty) v.SaveChanges();
@@ -456,6 +447,66 @@ namespace FinanceApp
             if (dlg.ShowDialog() != true) return;
 
             ActivateOrOpenStatement(dlg.SelectedAccount);
+        }
+
+        private void RecurringPayment_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new RecurringPaymentDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+            ActivateOrOpenRecurring();
+        }
+
+        private void RecurringReceipt_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new RecurringReceiptDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+            ActivateOrOpenRecurring();
+        }
+
+        private void ViewRecurring_Click(object sender, RoutedEventArgs e)
+        {
+            ActivateOrOpenRecurring();
+        }
+
+        private void ActivateOrOpenRecurring()
+        {
+            const string tabHeader = "Recurring Transactions";
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (GetTabHeaderText(item) == tabHeader)
+                {
+                    (item.Content as RecurringTransView)?.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+            var view = new RecurringTransView(_db);
+            AddClosableTab(tabHeader, view);
+        }
+
+        private void LoanStatement_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new LoanSelectDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            ActivateOrOpenLoanStatement(dlg.SelectedAccount);
+        }
+
+        private void ActivateOrOpenLoanStatement(string account)
+        {
+            var tabHeader = $"Loan: {account}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (GetTabHeaderText(item) == tabHeader)
+                {
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new LoanStatementView(_db, account);
+            AddClosableTab(tabHeader, view);
         }
 
         // Adds a tab with a close button. canClose (optional) is called before removal;

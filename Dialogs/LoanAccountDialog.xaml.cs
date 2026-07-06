@@ -13,12 +13,13 @@ namespace FinanceApp.Dialogs
         {
             InitializeComponent();
             _db = db;
-            DpStartDate.SelectedDate = DateTime.Today;
+            DpStartDate.SelectedDate  = DateTime.Today;
+            DpFirstPmnt.SelectedDate  = DateTime.Today;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
-            if (!Validate(out var name, out var date, out var institution,
+            if (!Validate(out var name, out var date, out var firstPmnt, out var institution,
                           out var loanAmount, out var numPayments, out var interestRate, out var escrow))
                 return;
 
@@ -43,18 +44,27 @@ namespace FinanceApp.Dialogs
                 cmd.ExecuteNonQuery();
             }
 
+            // Calculate monthly payment using standard amortization formula
+            double monthlyRate = (double)interestRate / 1200.0;
+            double n           = (double)numPayments;
+            double pmt         = monthlyRate == 0
+                ? (double)loanAmount / n
+                : (double)loanAmount * monthlyRate / (1.0 - Math.Pow(1.0 + monthlyRate, -n));
+
             // Save to LoanData
             using (var cmd = new SqliteCommand(
-                "INSERT INTO LoanData (AccountName, StartDate, Institution, Principle, Term, Interest, Escrow) " +
-                "VALUES (@name, @date, @inst, @prin, @term, @rate, @escrow);", conn))
+                "INSERT INTO LoanData (AccountName, StartDate, FirstPmnt, Institution, Principle, Term, Interest, Escrow, Pmt) " +
+                "VALUES (@name, @date, @firstPmnt, @inst, @prin, @term, @rate, @escrow, @pmt);", conn))
             {
-                cmd.Parameters.AddWithValue("@name",   name);
-                cmd.Parameters.AddWithValue("@date",   date);
-                cmd.Parameters.AddWithValue("@inst",   institution);
-                cmd.Parameters.AddWithValue("@prin",   loanAmount);
-                cmd.Parameters.AddWithValue("@term",   numPayments);
-                cmd.Parameters.AddWithValue("@rate",   interestRate);
-                cmd.Parameters.AddWithValue("@escrow", escrow);
+                cmd.Parameters.AddWithValue("@name",      name);
+                cmd.Parameters.AddWithValue("@date",      date);
+                cmd.Parameters.AddWithValue("@firstPmnt", firstPmnt);
+                cmd.Parameters.AddWithValue("@inst",      institution);
+                cmd.Parameters.AddWithValue("@prin",      loanAmount);
+                cmd.Parameters.AddWithValue("@term",      numPayments);
+                cmd.Parameters.AddWithValue("@rate",      interestRate);
+                cmd.Parameters.AddWithValue("@escrow",    escrow);
+                cmd.Parameters.AddWithValue("@pmt",       pmt);
                 cmd.ExecuteNonQuery();
             }
 
@@ -70,11 +80,12 @@ namespace FinanceApp.Dialogs
             DialogResult = true;
         }
 
-        private bool Validate(out string name, out string date, out string institution,
+        private bool Validate(out string name, out string date, out string firstPmnt,
+                               out string institution,
                                out decimal loanAmount, out decimal numPayments,
                                out decimal interestRate, out decimal escrow)
         {
-            name = institution = date = "";
+            name = institution = date = firstPmnt = "";
             loanAmount = numPayments = interestRate = escrow = 0;
 
             if (string.IsNullOrWhiteSpace(TxtAccountName.Text))
@@ -87,6 +98,12 @@ namespace FinanceApp.Dialogs
             {
                 ShowWarning("Account start date is required.");
                 DpStartDate.Focus();
+                return false;
+            }
+            if (DpFirstPmnt.SelectedDate is null)
+            {
+                ShowWarning("First payment date is required.");
+                DpFirstPmnt.Focus();
                 return false;
             }
             if (!decimal.TryParse(TxtLoanAmount.Text, out loanAmount) || loanAmount <= 0)
@@ -116,6 +133,7 @@ namespace FinanceApp.Dialogs
 
             name        = TxtAccountName.Text.Trim();
             date        = DpStartDate.SelectedDate!.Value.ToString("yyyy-MM-dd");
+            firstPmnt   = DpFirstPmnt.SelectedDate!.Value.ToString("yyyy-MM-dd");
             institution = TxtInstitution.Text.Trim();
             return true;
         }

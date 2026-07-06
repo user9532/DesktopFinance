@@ -23,7 +23,6 @@ namespace FinanceApp.Data
         {
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
-            RunMigrations(conn);
             CreateTables(conn);
             SeedVersionRow(conn);
         }
@@ -42,58 +41,6 @@ namespace FinanceApp.Data
                 "SELECT COUNT(*) FROM AccountChart WHERE AccountName = @name;", conn);
             cmd.Parameters.AddWithValue("@name", accountName);
             return (long)cmd.ExecuteScalar()! > 0;
-        }
-
-        // Runs one-time schema changes for databases created under earlier versions.
-        private static void RunMigrations(SqliteConnection conn)
-        {
-            // Rename RecurPayment -> RecurTrans if the old table still exists.
-            using var checkCmd = new SqliteCommand(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='RecurPayment';",
-                conn);
-            var exists = (long)checkCmd.ExecuteScalar()! > 0;
-
-            if (exists)
-            {
-                using var renameCmd = new SqliteCommand(
-                    "ALTER TABLE RecurPayment RENAME TO RecurTrans;", conn);
-                renameCmd.ExecuteNonQuery();
-            }
-
-            // Add split columns to Securities if the table and columns don't exist yet.
-            using var secCheck = new SqliteCommand(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Securities';", conn);
-            if ((long)secCheck.ExecuteScalar()! > 0)
-            {
-                AddColumnIfMissing(conn, "Securities", "IsSplit",    "INTEGER");
-                AddColumnIfMissing(conn, "Securities", "SplitDate",  "TEXT");
-                AddColumnIfMissing(conn, "Securities", "SplitRatio", "REAL");
-            }
-
-            // Unique index on Quotes(Date, Symbol) — only if Quotes table already exists.
-            using var quotesCheck = new SqliteCommand(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='Quotes';", conn);
-            if ((long)quotesCheck.ExecuteScalar()! > 0)
-            {
-                using var idxCmd = new SqliteCommand(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_quotes_date_symbol ON Quotes (Date, Symbol);",
-                    conn);
-                idxCmd.ExecuteNonQuery();
-            }
-        }
-
-        private static void AddColumnIfMissing(SqliteConnection conn,
-            string table, string column, string type)
-        {
-            using var infoCmd = new SqliteCommand(
-                $"PRAGMA table_info({table});", conn);
-            using var r = infoCmd.ExecuteReader();
-            while (r.Read())
-                if (r.GetString(1) == column) return;
-
-            using var alterCmd = new SqliteCommand(
-                $"ALTER TABLE {table} ADD COLUMN {column} {type};", conn);
-            alterCmd.ExecuteNonQuery();
         }
 
         private static void CreateTables(SqliteConnection conn)
@@ -170,7 +117,8 @@ namespace FinanceApp.Data
                     Interest    REAL,
                     Term        REAL,
                     Escrow      REAL,
-                    Pmt         REAL
+                    Pmt         REAL,
+                    FirstPmnt   TEXT
                 );
 
                 CREATE TABLE IF NOT EXISTS Securities (
@@ -185,7 +133,9 @@ namespace FinanceApp.Data
                     Date   TEXT,
                     Symbol TEXT,
                     Price  REAL
-                );";
+                );
+
+                CREATE UNIQUE INDEX IF NOT EXISTS ux_quotes_date_symbol ON Quotes (Date, Symbol);";
 
             using var cmd = new SqliteCommand(sql, conn);
             cmd.ExecuteNonQuery();

@@ -20,7 +20,7 @@ namespace FinanceApp.Dialogs
             using var cmd = new SqliteCommand(
                 "SELECT AccountName FROM AccountChart " +
                 "WHERE AccountGroup IN ('Asset','Liability') " +
-                "  AND AccountCode IN (1, 3) " +
+                "  AND AccountCode = 1 " +
                 "ORDER BY AccountName;", conn);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())

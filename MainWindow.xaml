@@ -39,6 +39,7 @@
                 <MenuItem Header="_New Account"       Click="NewAccount_Click"/>
                 <MenuItem Header="_Edit Account"      Click="EditAccount_Click"/>
                 <MenuItem Header="_Account Statement" Click="AccountStatement_Click"/>
+                <MenuItem Header="_Loan Statement"   Click="LoanStatement_Click"/>
             </MenuItem>
             <MenuItem Header="_Category">
                 <MenuItem Header="_New Category"  Click="NewCategory_Click"/>
@@ -54,6 +55,11 @@
                 <MenuItem Header="_Portfolio Statement"  Click="PortfolioStatement_Click"/>
                 <Separator/>
                 <MenuItem Header="_Stock Split"          Click="StockSplit_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Recurring">
+                <MenuItem Header="_Recurring Payment" Click="RecurringPayment_Click"/>
+                <MenuItem Header="_Recurring Receipt" Click="RecurringReceipt_Click"/>
+                <MenuItem Header="_View Recurring"    Click="ViewRecurring_Click"/>
             </MenuItem>
             <MenuItem Header="_Reports">
                 <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>
