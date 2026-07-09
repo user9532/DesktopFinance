@@ -1,7 +1,9 @@
 using FinanceApp.Data;
+using FinanceApp.Dialogs;
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace FinanceApp.Views
@@ -108,6 +110,13 @@ namespace FinanceApp.Views
             }
 
             LoanGrid.ItemsSource = rows;
+        }
+
+        private void Payment_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new LoanPaymentDialog(_db, _account) { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() == true)
+                LoadData();
         }
     }
 }

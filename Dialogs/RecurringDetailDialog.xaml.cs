@@ -7,13 +7,12 @@ using System.Windows.Controls;
 
 namespace FinanceApp.Dialogs
 {
-    // One editable line in the dialog
+    // One editable line in the dialog (Account moved to shared header)
     internal class RecurLineControls
     {
-        public TextBox TxtPayee    { get; } = new TextBox { MinWidth = 160 };
-        public TextBox TxtAccount  { get; } = new TextBox { MinWidth = 150 };
-        public TextBox TxtAmount   { get; } = new TextBox { MinWidth = 90  };
-        public TextBox TxtCategory { get; } = new TextBox { MinWidth = 150 };
+        public TextBox TxtPayee    { get; } = new TextBox { MinWidth = 180 };
+        public TextBox TxtAmount   { get; } = new TextBox { MinWidth = 100 };
+        public TextBox TxtCategory { get; } = new TextBox { MinWidth = 180 };
         public TextBox TxtMemo     { get; } = new TextBox { MinWidth = 120 };
     }
 
@@ -31,12 +30,23 @@ namespace FinanceApp.Dialogs
             _id     = id;
             _trType = trType;
             InitializeComponent();
+            LoadBankAccounts();
             LoadRows();
+        }
+
+        private void LoadBankAccounts()
+        {
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT AccountName FROM AccountChart " +
+                "WHERE AccountType = 'Bank' ORDER BY AccountName;", conn);
+            using var rdr = cmd.ExecuteReader();
+            while (rdr.Read())
+                CbAccount.Items.Add(rdr.GetString(0));
         }
 
         private void LoadRows()
         {
-            // Update Payee column header to "Payor" for receipts
             if (_trType == 2)
                 PayeeHeader.Text = "Payor";
 
@@ -64,41 +74,42 @@ namespace FinanceApp.Dialogs
                     TxtFrequency.Text = FrequencyLabel(freq);
                     if (DateTime.TryParse(nextDue, out var nd))
                         DpNextDue.SelectedDate = nd;
+
+                    // Select the account in the dropdown; fall back to text if not in list
+                    CbAccount.SelectedItem = account;
+                    if (CbAccount.SelectedItem == null)
+                        CbAccount.Text = account;
+
                     first = false;
                 }
 
-                AddLine(payee, account, amount.ToString("N2"), category, memo);
+                AddLine(payee, amount.ToString("N2"), category, memo);
             }
         }
 
-        private void AddLine(string payee, string account, string amount, string category, string memo)
+        private void AddLine(string payee, string amount, string category, string memo)
         {
             var line = new RecurLineControls();
             line.TxtPayee.Text    = payee;
-            line.TxtAccount.Text  = account;
             line.TxtAmount.Text   = amount;
             line.TxtCategory.Text = category;
             line.TxtMemo.Text     = memo;
 
             var row = new Grid { Margin = new Thickness(0, 2, 0, 2) };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(160) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(180) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
             row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             Grid.SetColumn(line.TxtPayee,    0);
-            Grid.SetColumn(line.TxtAccount,  2);
-            Grid.SetColumn(line.TxtAmount,   4);
-            Grid.SetColumn(line.TxtCategory, 6);
-            Grid.SetColumn(line.TxtMemo,     8);
+            Grid.SetColumn(line.TxtAmount,   2);
+            Grid.SetColumn(line.TxtCategory, 4);
+            Grid.SetColumn(line.TxtMemo,     6);
 
             row.Children.Add(line.TxtPayee);
-            row.Children.Add(line.TxtAccount);
             row.Children.Add(line.TxtAmount);
             row.Children.Add(line.TxtCategory);
             row.Children.Add(line.TxtMemo);
@@ -112,6 +123,14 @@ namespace FinanceApp.Dialogs
             if (DpNextDue.SelectedDate is null)
             {
                 MessageBox.Show("Next Due Date is required.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var account = (CbAccount.SelectedItem as string) ?? CbAccount.Text.Trim();
+            if (string.IsNullOrEmpty(account))
+            {
+                MessageBox.Show("Please select a bank account.", "Validation",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -150,7 +169,7 @@ namespace FinanceApp.Dialogs
                     VALUES
                         (@acct, @date, @name, @cat, @amt, @memo, @type, @trnType);",
                     conn, tx);
-                ins.Parameters.AddWithValue("@acct",    line.TxtAccount.Text.Trim());
+                ins.Parameters.AddWithValue("@acct",    account);
                 ins.Parameters.AddWithValue("@date",    nextDueStr);
                 ins.Parameters.AddWithValue("@name",    line.TxtPayee.Text.Trim());
                 ins.Parameters.AddWithValue("@cat",     line.TxtCategory.Text.Trim());

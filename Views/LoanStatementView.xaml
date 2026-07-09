@@ -4,6 +4,9 @@
              x:Name="Root">
 
     <DockPanel>
+        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+            <Button x:Name="BtnPayment" Content="Payment" Width="90" Click="Payment_Click"/>
+        </StackPanel>
         <DataGrid x:Name="LoanGrid"
                   AutoGenerateColumns="False"
                   IsReadOnly="True"

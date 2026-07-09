@@ -118,7 +118,8 @@ namespace FinanceApp.Data
                     Term        REAL,
                     Escrow      REAL,
                     Pmt         REAL,
-                    FirstPmnt   TEXT
+                    FirstPmnt   TEXT,
+                    CurrBalance REAL
                 );
 
                 CREATE TABLE IF NOT EXISTS Securities (

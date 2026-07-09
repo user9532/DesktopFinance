@@ -53,18 +53,39 @@ namespace FinanceApp.Dialogs
 
             // Save to LoanData
             using (var cmd = new SqliteCommand(
-                "INSERT INTO LoanData (AccountName, StartDate, FirstPmnt, Institution, Principle, Term, Interest, Escrow, Pmt) " +
-                "VALUES (@name, @date, @firstPmnt, @inst, @prin, @term, @rate, @escrow, @pmt);", conn))
+                "INSERT INTO LoanData (AccountName, StartDate, FirstPmnt, Institution, Principle, Term, Interest, Escrow, Pmt, CurrBalance) " +
+                "VALUES (@name, @date, @firstPmnt, @inst, @prin, @term, @rate, @escrow, @pmt, @currBalance);", conn))
             {
-                cmd.Parameters.AddWithValue("@name",      name);
-                cmd.Parameters.AddWithValue("@date",      date);
-                cmd.Parameters.AddWithValue("@firstPmnt", firstPmnt);
-                cmd.Parameters.AddWithValue("@inst",      institution);
-                cmd.Parameters.AddWithValue("@prin",      loanAmount);
-                cmd.Parameters.AddWithValue("@term",      numPayments);
-                cmd.Parameters.AddWithValue("@rate",      interestRate);
-                cmd.Parameters.AddWithValue("@escrow",    escrow);
-                cmd.Parameters.AddWithValue("@pmt",       pmt);
+                cmd.Parameters.AddWithValue("@name",        name);
+                cmd.Parameters.AddWithValue("@date",        date);
+                cmd.Parameters.AddWithValue("@firstPmnt",   firstPmnt);
+                cmd.Parameters.AddWithValue("@inst",        institution);
+                cmd.Parameters.AddWithValue("@prin",        loanAmount);
+                cmd.Parameters.AddWithValue("@term",        numPayments);
+                cmd.Parameters.AddWithValue("@rate",        interestRate);
+                cmd.Parameters.AddWithValue("@escrow",      escrow);
+                cmd.Parameters.AddWithValue("@pmt",         pmt);
+                cmd.Parameters.AddWithValue("@currBalance", loanAmount);
+                cmd.ExecuteNonQuery();
+            }
+
+            // Save to RecurTrans
+            long nextRecurId;
+            using (var idCmd = new SqliteCommand(
+                "SELECT COALESCE(MAX(Id), 0) + 1 FROM RecurTrans;", conn))
+            {
+                nextRecurId = (long)idCmd.ExecuteScalar()!;
+            }
+            using (var cmd = new SqliteCommand(
+                "INSERT INTO RecurTrans (Id, Name, Amount, Memo, Account, Category, Frequency, NextDue, LastPosted, TrType) " +
+                "VALUES (@id, @name, @amt, @memo, @acct, '', 30, @nextDue, '', 3);", conn))
+            {
+                cmd.Parameters.AddWithValue("@id",       nextRecurId);
+                cmd.Parameters.AddWithValue("@name",     name);
+                cmd.Parameters.AddWithValue("@amt",      pmt + (double)escrow);
+                cmd.Parameters.AddWithValue("@memo",     institution);
+                cmd.Parameters.AddWithValue("@acct",     name);
+                cmd.Parameters.AddWithValue("@nextDue",  firstPmnt);
                 cmd.ExecuteNonQuery();
             }
 
