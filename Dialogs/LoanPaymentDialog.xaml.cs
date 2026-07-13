@@ -19,6 +19,7 @@ namespace FinanceApp.Dialogs
         private string _startDate = "";
         private string _lastPosted = "";
         private string _nextDue = "";
+        private string _recurCategory = "";
 
         public LoanPaymentDialog(DatabaseManager db, string account)
         {
@@ -34,6 +35,9 @@ namespace FinanceApp.Dialogs
             TxtDescription.Text = _institution;
             TxtEscrow.Text      = _escrowAmt.ToString("N2");
 
+            if (!string.IsNullOrEmpty(_recurCategory))
+                CbInterestCategory.SelectedItem = _recurCategory;
+
             DpPaymentDate.SelectedDate = DateTime.TryParse(_nextDue, out var defaultDate) ? defaultDate : DateTime.Today;
 
             Recalculate();
@@ -44,7 +48,7 @@ namespace FinanceApp.Dialogs
             using var conn = _db.OpenConnection();
             using var cmd = new SqliteCommand(
                 "SELECT AccountName FROM AccountChart " +
-                "WHERE AccountGroup IN ('Asset', 'Liability') " +
+                "WHERE AccountType IN ('Bank', 'Investment') " +
                 "ORDER BY AccountName;", conn);
             using var rdr = cmd.ExecuteReader();
             while (rdr.Read())
@@ -96,14 +100,15 @@ namespace FinanceApp.Dialogs
             }
 
             using (var cmd = new SqliteCommand(
-                "SELECT LastPosted, NextDue FROM RecurTrans WHERE Account = @acct AND TrType = 3;", conn))
+                "SELECT LastPosted, NextDue, Category FROM RecurTrans WHERE Account = @acct AND TrType = 3;", conn))
             {
                 cmd.Parameters.AddWithValue("@acct", _account);
                 using var rdr = cmd.ExecuteReader();
                 if (rdr.Read())
                 {
-                    _lastPosted = rdr.IsDBNull(0) ? "" : rdr.GetString(0);
-                    _nextDue    = rdr.IsDBNull(1) ? "" : rdr.GetString(1);
+                    _lastPosted    = rdr.IsDBNull(0) ? "" : rdr.GetString(0);
+                    _nextDue       = rdr.IsDBNull(1) ? "" : rdr.GetString(1);
+                    _recurCategory = rdr.IsDBNull(2) ? "" : rdr.GetString(2);
                 }
             }
         }
@@ -126,20 +131,20 @@ namespace FinanceApp.Dialogs
             if (days < 0) days = 0;
 
             double interest  = _currBalance * (_interestRate / 100.0) * (days / 365.0);
-            double principle = _pmt - interest;
+            double principal = _pmt - interest;
 
             TxtInterest.Text  = interest.ToString("N2");
-            TxtPrinciple.Text = principle.ToString("N2");
+            TxtPrincipal.Text = principal.ToString("N2");
 
             UpdateTotal();
         }
 
         private void UpdateTotal()
         {
-            double.TryParse(TxtPrinciple.Text, out var principle);
+            double.TryParse(TxtPrincipal.Text, out var principal);
             double.TryParse(TxtInterest.Text, out var interest);
             double.TryParse(TxtEscrow.Text, out var escrow);
-            TxtTotal.Text = (principle + interest + escrow).ToString("N2");
+            TxtTotal.Text = (principal + interest + escrow).ToString("N2");
         }
 
         private void Post_Click(object sender, RoutedEventArgs e)
@@ -154,9 +159,9 @@ namespace FinanceApp.Dialogs
                 Warn("Please select a Payment Date.");
                 return;
             }
-            if (!double.TryParse(TxtPrinciple.Text, out var principle))
+            if (!double.TryParse(TxtPrincipal.Text, out var principal))
             {
-                Warn("Loan Principle must be a number.");
+                Warn("Loan Principal must be a number.");
                 return;
             }
             if (!double.TryParse(TxtInterest.Text, out var interest))
@@ -182,28 +187,31 @@ namespace FinanceApp.Dialogs
             }
 
             string dateStr = payDate.ToString("yyyy-MM-dd");
+            string checkNo = TxtCheckNo.Text ?? "";
 
             using var conn = _db.OpenConnection();
 
             using (var cmd = new SqliteCommand(
-                "INSERT INTO Transactions (Account, Date, Name, Amount, Memo, TrnType, Category) " +
-                "VALUES (@acct, @date, @name, @amt, @memo, 'CREDIT', @cat);", conn))
+                "INSERT INTO Transactions (Account, Date, CheckNo, Name, Amount, Memo, TrnType, Category) " +
+                "VALUES (@acct, @date, @chk, @name, @amt, @memo, 'CREDIT', @cat);", conn))
             {
                 cmd.Parameters.AddWithValue("@acct", fromAccount);
                 cmd.Parameters.AddWithValue("@date", dateStr);
-                cmd.Parameters.AddWithValue("@name", $"Principle payment {_account}");
-                cmd.Parameters.AddWithValue("@amt",  principle);
+                cmd.Parameters.AddWithValue("@chk",  checkNo);
+                cmd.Parameters.AddWithValue("@name", $"Principal payment {_account}");
+                cmd.Parameters.AddWithValue("@amt",  principal);
                 cmd.Parameters.AddWithValue("@memo", _institution);
                 cmd.Parameters.AddWithValue("@cat",  _account);
                 cmd.ExecuteNonQuery();
             }
 
             using (var cmd = new SqliteCommand(
-                "INSERT INTO Transactions (Account, Date, Name, Amount, Memo, TrnType, Source, Category) " +
-                "VALUES (@acct, @date, @name, @amt, @memo, 'CREDIT', @src, @cat);", conn))
+                "INSERT INTO Transactions (Account, Date, CheckNo, Name, Amount, Memo, TrnType, Source, Category) " +
+                "VALUES (@acct, @date, @chk, @name, @amt, @memo, 'CREDIT', @src, @cat);", conn))
             {
                 cmd.Parameters.AddWithValue("@acct", fromAccount);
                 cmd.Parameters.AddWithValue("@date", dateStr);
+                cmd.Parameters.AddWithValue("@chk",  checkNo);
                 cmd.Parameters.AddWithValue("@name", $"Interest {_account}");
                 cmd.Parameters.AddWithValue("@amt",  interest);
                 cmd.Parameters.AddWithValue("@memo", _institution);
@@ -215,10 +223,11 @@ namespace FinanceApp.Dialogs
             if (escrow > 0)
             {
                 using var cmd = new SqliteCommand(
-                    "INSERT INTO Transactions (Account, Date, Name, Amount, Memo, TrnType, Category) " +
-                    "VALUES (@acct, @date, @name, @amt, @memo, 'CREDIT', @cat);", conn);
+                    "INSERT INTO Transactions (Account, Date, CheckNo, Name, Amount, Memo, TrnType, Category) " +
+                    "VALUES (@acct, @date, @chk, @name, @amt, @memo, 'CREDIT', @cat);", conn);
                 cmd.Parameters.AddWithValue("@acct", fromAccount);
                 cmd.Parameters.AddWithValue("@date", dateStr);
+                cmd.Parameters.AddWithValue("@chk",  checkNo);
                 cmd.Parameters.AddWithValue("@name", $"Escrow {_account}");
                 cmd.Parameters.AddWithValue("@amt",  escrow);
                 cmd.Parameters.AddWithValue("@memo", _institution);
@@ -235,10 +244,11 @@ namespace FinanceApp.Dialogs
                 string nextDueStr = payDate.AddDays(frequency).ToString("yyyy-MM-dd");
 
                 using var updCmd = new SqliteCommand(
-                    "UPDATE RecurTrans SET LastPosted = @lastPosted, NextDue = @nextDue " +
+                    "UPDATE RecurTrans SET LastPosted = @lastPosted, NextDue = @nextDue, Category = @cat " +
                     "WHERE Account = @acct AND TrType = 3;", conn);
                 updCmd.Parameters.AddWithValue("@lastPosted", dateStr);
                 updCmd.Parameters.AddWithValue("@nextDue",    nextDueStr);
+                updCmd.Parameters.AddWithValue("@cat",        interestCategory);
                 updCmd.Parameters.AddWithValue("@acct",       _account);
                 updCmd.ExecuteNonQuery();
             }
@@ -246,7 +256,7 @@ namespace FinanceApp.Dialogs
             using (var cmd = new SqliteCommand(
                 "UPDATE LoanData SET CurrBalance = @newBalance WHERE AccountName = @acct;", conn))
             {
-                cmd.Parameters.AddWithValue("@newBalance", _currBalance - principle);
+                cmd.Parameters.AddWithValue("@newBalance", _currBalance - principal);
                 cmd.Parameters.AddWithValue("@acct",       _account);
                 cmd.ExecuteNonQuery();
             }

@@ -4,11 +4,11 @@ using System.Windows;
 
 namespace FinanceApp.Dialogs
 {
-    public partial class AccountSelectDialog : Window
+    public partial class BankSelectDialog : Window
     {
         public string SelectedAccount { get; private set; } = "";
 
-        public AccountSelectDialog(DatabaseManager db)
+        public BankSelectDialog(DatabaseManager db)
         {
             InitializeComponent();
             LoadAccounts(db);
@@ -19,7 +19,7 @@ namespace FinanceApp.Dialogs
             using var conn = db.OpenConnection();
             using var cmd = new SqliteCommand(
                 "SELECT AccountName FROM AccountChart " +
-                "WHERE AccountGroup IN ('Asset','Liability') " +
+                "WHERE AccountType = 'Bank' " +
                 "  AND AccountCode = 1 " +
                 "ORDER BY AccountName;", conn);
             using var reader = cmd.ExecuteReader();

@@ -25,6 +25,8 @@ namespace FinanceApp.Views
         private readonly DatabaseManager _db;
         private readonly string _account;
 
+        public string Account => _account;
+
         public LoanStatementView(DatabaseManager db, string account)
         {
             InitializeComponent();
@@ -32,6 +34,8 @@ namespace FinanceApp.Views
             _account = account;
             LoadData();
         }
+
+        public void Refresh() => LoadData();
 
         private void LoadData()
         {
@@ -117,6 +121,12 @@ namespace FinanceApp.Views
             var dlg = new LoanPaymentDialog(_db, _account) { Owner = Window.GetWindow(this) };
             if (dlg.ShowDialog() == true)
                 LoadData();
+        }
+
+        private void Interest_Click(object sender, RoutedEventArgs e)
+        {
+            if (Window.GetWindow(this) is MainWindow main)
+                main.ActivateOrOpenLoanInterest(_account);
         }
     }
 }

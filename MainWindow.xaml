@@ -38,7 +38,10 @@
             <MenuItem Header="_Accounts">
                 <MenuItem Header="_New Account"       Click="NewAccount_Click"/>
                 <MenuItem Header="_Edit Account"      Click="EditAccount_Click"/>
-                <MenuItem Header="_Account Statement" Click="AccountStatement_Click"/>
+                <MenuItem Header="_Bank Statement"    Click="BankStatement_Click"/>
+                <MenuItem Header="_Credit Card Statement" Click="CreditCardStatement_Click"/>
+                <MenuItem Header="_Other Account Statement" Click="OtherAccountStatement_Click"/>
+                <MenuItem Header="Other _Liability Statement" Click="OtherLiabilityStatement_Click"/>
                 <MenuItem Header="_Loan Statement"   Click="LoanStatement_Click"/>
             </MenuItem>
             <MenuItem Header="_Category">

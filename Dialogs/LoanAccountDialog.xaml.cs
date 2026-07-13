@@ -53,7 +53,7 @@ namespace FinanceApp.Dialogs
 
             // Save to LoanData
             using (var cmd = new SqliteCommand(
-                "INSERT INTO LoanData (AccountName, StartDate, FirstPmnt, Institution, Principle, Term, Interest, Escrow, Pmt, CurrBalance) " +
+                "INSERT INTO LoanData (AccountName, StartDate, FirstPmnt, Institution, Principal, Term, Interest, Escrow, Pmt, CurrBalance) " +
                 "VALUES (@name, @date, @firstPmnt, @inst, @prin, @term, @rate, @escrow, @pmt, @currBalance);", conn))
             {
                 cmd.Parameters.AddWithValue("@name",        name);
@@ -124,6 +124,12 @@ namespace FinanceApp.Dialogs
             if (DpFirstPmnt.SelectedDate is null)
             {
                 ShowWarning("First payment date is required.");
+                DpFirstPmnt.Focus();
+                return false;
+            }
+            if (DpFirstPmnt.SelectedDate.Value <= DpStartDate.SelectedDate.Value)
+            {
+                ShowWarning("First payment date must be later than the account start date.");
                 DpFirstPmnt.Focus();
                 return false;
             }

@@ -58,8 +58,10 @@ namespace FinanceApp.Views
             using var cmd = new SqliteCommand(
                 "SELECT Id, Name, Account, Category, Amount, Frequency, NextDue, LastPosted, TrType " +
                 "FROM RecurTrans " +
-                "WHERE TrType IN (1, 2) " +
-                "ORDER BY TrType, NextDue, Id, Name;", conn);
+                "WHERE TrType IN (1, 2, 3) " +
+                "ORDER BY CASE TrType WHEN 2 THEN 1 ELSE 0 END, " +
+                "         CASE TrType WHEN 3 THEN 1 ELSE 0 END, " +
+                "         NextDue, Id, Name;", conn);
             using var rdr = cmd.ExecuteReader();
 
             var allRows = new List<RecurringTransRow>();
@@ -103,6 +105,19 @@ namespace FinanceApp.Views
         {
             if (sender is Button btn && btn.Tag is RecurringTransRow row)
             {
+                if (row.TrType == 3)
+                {
+                    var loanDlg = new LoanPaymentDialog(_db, row.Account)
+                        { Owner = Window.GetWindow(this) };
+                    if (loanDlg.ShowDialog() == true)
+                    {
+                        LoadData();
+                        if (Window.GetWindow(this) is MainWindow main)
+                            main.RefreshLoanTabs(row.Account);
+                    }
+                    return;
+                }
+
                 var detail = new RecurringDetailDialog(_db, row.Id, trType: 1)
                     { Owner = Window.GetWindow(this) };
                 if (detail.ShowDialog() == true)

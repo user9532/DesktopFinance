@@ -113,7 +113,7 @@ namespace FinanceApp.Data
                     AccountName TEXT,
                     Institution TEXT,
                     StartDate   TEXT,
-                    Principle   REAL,
+                    Principal   REAL,
                     Interest    REAL,
                     Term        REAL,
                     Escrow      REAL,

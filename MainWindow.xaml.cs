@@ -95,14 +95,35 @@ namespace FinanceApp
 
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
-            var dirty = MainTabControl.Items
+            var dirtyBank = MainTabControl.Items
                 .OfType<TabItem>()
                 .Select(t => t.Content as AccountStatementView)
                 .OfType<AccountStatementView>()          // strips nulls, non-nullable
                 .Where(v => v.HasUnsavedChanges)
                 .ToList();
 
-            if (!dirty.Any()) return;
+            var dirtyCc = MainTabControl.Items
+                .OfType<TabItem>()
+                .Select(t => t.Content as CreditCardStatementView)
+                .OfType<CreditCardStatementView>()
+                .Where(v => v.HasUnsavedChanges)
+                .ToList();
+
+            var dirtyOther = MainTabControl.Items
+                .OfType<TabItem>()
+                .Select(t => t.Content as OtherAccountStatementView)
+                .OfType<OtherAccountStatementView>()
+                .Where(v => v.HasUnsavedChanges)
+                .ToList();
+
+            var dirtyOtherLiability = MainTabControl.Items
+                .OfType<TabItem>()
+                .Select(t => t.Content as OtherLiabilityStatementView)
+                .OfType<OtherLiabilityStatementView>()
+                .Where(v => v.HasUnsavedChanges)
+                .ToList();
+
+            if (!dirtyBank.Any() && !dirtyCc.Any() && !dirtyOther.Any() && !dirtyOtherLiability.Any()) return;
 
             var result = MessageBox.Show(
                 "There are unsaved changes in one or more account statement tabs.\n\n" +
@@ -110,7 +131,12 @@ namespace FinanceApp
                 "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
 
             if (result == MessageBoxResult.Yes)
-                foreach (var v in dirty) v.SaveChanges();
+            {
+                foreach (var v in dirtyBank)            v.SaveChanges();
+                foreach (var v in dirtyCc)              v.SaveChanges();
+                foreach (var v in dirtyOther)           v.SaveChanges();
+                foreach (var v in dirtyOtherLiability)  v.SaveChanges();
+            }
             else if (result == MessageBoxResult.Cancel)
                 e.Cancel = true;
         }
@@ -148,14 +174,28 @@ namespace FinanceApp
                 var transactions = importer.ReadTransactions(filePath);
                 importer.ImportTransactions(accountName, transactions);
 
-                // Activate existing statement tab (refreshed) or open a new one
-                ActivateOrOpenStatement(accountName);
+                // Activate existing statement tab (refreshed) or open a new one,
+                // choosing the Bank or Credit Card statement window based on AccountType
+                var accountType = GetAccountType(accountName);
+                if (accountType == "Credit Card")
+                    ActivateOrOpenCreditCardStatement(accountName);
+                else
+                    ActivateOrOpenStatement(accountName);
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Import failed:\n\n{ex.Message}",
                     "Import Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private string GetAccountType(string accountName)
+        {
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT AccountType FROM AccountChart WHERE AccountName = @acct;", conn);
+            cmd.Parameters.AddWithValue("@acct", accountName);
+            return cmd.ExecuteScalar() as string ?? "";
         }
 
         private void AddSecurities_Click(object sender, RoutedEventArgs e)
@@ -441,12 +481,93 @@ namespace FinanceApp
             _leftPaneVisible = !_leftPaneVisible;
         }
 
-        private void AccountStatement_Click(object sender, RoutedEventArgs e)
+        private void BankStatement_Click(object sender, RoutedEventArgs e)
         {
-            var dlg = new AccountSelectDialog(_db) { Owner = this };
+            var dlg = new BankSelectDialog(_db) { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
             ActivateOrOpenStatement(dlg.SelectedAccount);
+        }
+
+        private void CreditCardStatement_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new CreditCardSelectDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            ActivateOrOpenCreditCardStatement(dlg.SelectedAccount);
+        }
+
+        private void ActivateOrOpenCreditCardStatement(string account)
+        {
+            var tabHeader = $"Statement: {account}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is CreditCardStatementView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new CreditCardStatementView(_db, account);
+            AddClosableTab(tabHeader, view, () => view.CanClose());
+        }
+
+        private void OtherAccountStatement_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OtherAccountSelectDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            ActivateOrOpenOtherAccountStatement(dlg.SelectedAccount);
+        }
+
+        private void ActivateOrOpenOtherAccountStatement(string account)
+        {
+            var tabHeader = $"Statement: {account}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is OtherAccountStatementView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new OtherAccountStatementView(_db, account);
+            AddClosableTab(tabHeader, view, () => view.CanClose());
+        }
+
+        private void OtherLiabilityStatement_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new OtherLiabilitySelectDialog(_db) { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            ActivateOrOpenOtherLiabilityStatement(dlg.SelectedAccount);
+        }
+
+        private void ActivateOrOpenOtherLiabilityStatement(string account)
+        {
+            var tabHeader = $"Statement: {account}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is OtherLiabilityStatementView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new OtherLiabilityStatementView(_db, account);
+            AddClosableTab(tabHeader, view, () => view.CanClose());
         }
 
         private void RecurringPayment_Click(object sender, RoutedEventArgs e)
@@ -506,6 +627,37 @@ namespace FinanceApp
             }
 
             var view = new LoanStatementView(_db, account);
+            AddClosableTab(tabHeader, view);
+        }
+
+        // Refreshes any open Loan Statement / Loan Interest tabs for the given account.
+        // Used after a loan payment is posted from outside the Loan Statement window
+        // (e.g. via the Recurring Transactions "View" button).
+        public void RefreshLoanTabs(string account)
+        {
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is LoanStatementView lsv && lsv.Account == account)
+                    lsv.Refresh();
+                else if (item.Content is LoanInterestView liv && liv.Account == account)
+                    liv.Refresh();
+            }
+        }
+
+        public void ActivateOrOpenLoanInterest(string account)
+        {
+            var tabHeader = $"Interest – {account}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is LoanInterestView && GetTabHeaderText(item) == tabHeader)
+                {
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new LoanInterestView(_db, account);
             AddClosableTab(tabHeader, view);
         }
 

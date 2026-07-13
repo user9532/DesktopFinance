@@ -6,6 +6,7 @@
     <DockPanel>
         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
             <Button x:Name="BtnPayment" Content="Payment" Width="90" Click="Payment_Click"/>
+            <Button x:Name="BtnInterest" Content="Interest" Width="90" Margin="8,0,0,0" Click="Interest_Click"/>
         </StackPanel>
         <DataGrid x:Name="LoanGrid"
                   AutoGenerateColumns="False"
