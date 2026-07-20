@@ -99,7 +99,8 @@ namespace FinanceApp.Views
                 var raw = sumCmd.ExecuteScalar();
                 var amount = raw == null || raw == DBNull.Value ? 0m : Convert.ToDecimal(raw);
 
-                lines.Add(new ReportLine(account, amount));
+                if (amount != 0)
+                    lines.Add(new ReportLine(account, amount));
             }
 
             return lines;

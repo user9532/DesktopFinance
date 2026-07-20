@@ -125,7 +125,8 @@ namespace FinanceApp.Views
                 decimal budget = budgetRaw == null || budgetRaw == DBNull.Value
                                  ? 0m : Convert.ToDecimal(budgetRaw);
 
-                lines.Add(new BudgetLine(account, budget, actual));
+                if (budget != 0 || actual != 0)
+                    lines.Add(new BudgetLine(account, budget, actual));
             }
 
             return lines;

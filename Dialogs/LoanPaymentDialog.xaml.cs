@@ -48,7 +48,7 @@ namespace FinanceApp.Dialogs
             using var conn = _db.OpenConnection();
             using var cmd = new SqliteCommand(
                 "SELECT AccountName FROM AccountChart " +
-                "WHERE AccountType IN ('Bank', 'Investment') " +
+                "WHERE AccountType = 'Bank' " +
                 "ORDER BY AccountName;", conn);
             using var rdr = cmd.ExecuteReader();
             while (rdr.Read())

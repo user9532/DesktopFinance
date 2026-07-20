@@ -570,6 +570,50 @@ namespace FinanceApp
             AddClosableTab(tabHeader, view, () => view.CanClose());
         }
 
+        private void NetWorthStatement_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new NetWorthDateDialog { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            var tabHeader = $"Net Worth: {dlg.SelectedDate:yyyy-MM-dd}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is NetWorthView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new NetWorthView(_db, dlg.SelectedDate);
+            AddClosableTab(tabHeader, view);
+        }
+
+        private void CashFlowStatement_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new CashFlowDateDialog { Owner = this };
+            if (dlg.ShowDialog() != true) return;
+
+            var tabHeader = $"Cash Flow: {dlg.StartDate:yyyy-MM-dd} - {dlg.EndDate:yyyy-MM-dd}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is CashFlowView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new CashFlowView(_db, dlg.StartDate, dlg.EndDate);
+            AddClosableTab(tabHeader, view);
+        }
+
         private void RecurringPayment_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new RecurringPaymentDialog(_db) { Owner = this };

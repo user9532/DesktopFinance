@@ -68,6 +68,8 @@
                 <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>
                 <MenuItem Header="_Budget vs Actual"     Click="BudgetActual_Click"/>
                 <MenuItem Header="_Drilldown Category"   Click="DrilldownCategory_Click"/>
+                <MenuItem Header="_Net Worth Statement"  Click="NetWorthStatement_Click"/>
+                <MenuItem Header="_Cash Flow Statement"  Click="CashFlowStatement_Click"/>
             </MenuItem>
         </Menu>
 

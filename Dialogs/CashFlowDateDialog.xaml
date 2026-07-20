@@ -1,0 +1,34 @@
+<Window x:Class="FinanceApp.Dialogs.CashFlowDateDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cash Flow Statement"
+        Height="190" Width="340"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False">
+    <Grid Margin="20,14,20,14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="8"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="90"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <TextBlock  Grid.Row="0" Grid.Column="0" Text="Start date" VerticalAlignment="Center"/>
+        <DatePicker Grid.Row="0" Grid.Column="1" x:Name="DpStart"/>
+
+        <TextBlock  Grid.Row="2" Grid.Column="0" Text="End date" VerticalAlignment="Center"/>
+        <DatePicker Grid.Row="2" Grid.Column="1" x:Name="DpEnd"/>
+
+        <StackPanel Grid.Row="4" Grid.ColumnSpan="2" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,14,0,0">
+            <Button Content="OK"     Width="80" IsDefault="True" Margin="0,0,8,0" Click="OK_Click"/>
+            <Button Content="Cancel" Width="80" IsCancel="True"  Click="Cancel_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
