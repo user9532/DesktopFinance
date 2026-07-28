@@ -29,15 +29,28 @@
         <Menu DockPanel.Dock="Top">
             <MenuItem Header="_File">
                 <MenuItem Header="_Import QFX Data" Click="ImportQfx_Click"/>
+                <MenuItem Header="_Export…" Click="ExportTransactions_Click"/>
                 <Separator/>
                 <MenuItem Header="_Create Backup"  Click="CreateBackup_Click"/>
                 <MenuItem Header="_Restore Backup" Click="RestoreBackup_Click"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
+            <MenuItem Header="_Edit">
+                <MenuItem Header="_Undo"   Command="Undo"/>
+                <MenuItem Header="_Redo"   Command="Redo"/>
+                <Separator/>
+                <MenuItem Header="Cu_t"    Command="Cut"/>
+                <MenuItem Header="_Copy"   Command="Copy"/>
+                <MenuItem Header="_Paste"  Command="Paste"/>
+                <MenuItem Header="_Delete" Command="Delete"/>
+                <Separator/>
+                <MenuItem Header="Select _All" Command="SelectAll"/>
+            </MenuItem>
             <MenuItem Header="_Accounts">
                 <MenuItem Header="_New Account"       Click="NewAccount_Click"/>
                 <MenuItem Header="_Edit Account"      Click="EditAccount_Click"/>
+                <Separator/>
                 <MenuItem Header="_Bank Statement"    Click="BankStatement_Click"/>
                 <MenuItem Header="_Credit Card Statement" Click="CreditCardStatement_Click"/>
                 <MenuItem Header="_Other Account Statement" Click="OtherAccountStatement_Click"/>
@@ -70,6 +83,9 @@
                 <MenuItem Header="_Drilldown Category"   Click="DrilldownCategory_Click"/>
                 <MenuItem Header="_Net Worth Statement"  Click="NetWorthStatement_Click"/>
                 <MenuItem Header="_Cash Flow Statement"  Click="CashFlowStatement_Click"/>
+            </MenuItem>
+            <MenuItem Header="_Help">
+                <MenuItem Header="_About" Click="About_Click"/>
             </MenuItem>
         </Menu>
 
@@ -128,8 +144,10 @@
                                    Foreground="#333333"
                                    VerticalAlignment="Center"/>
                     </Border>
-                    <!-- Left pane content (empty per requirements) -->
-                    <Grid/>
+                    <!-- Left pane content: account navigation tree -->
+                    <TreeView x:Name="NavTree"
+                              BorderThickness="0"
+                              Background="Transparent"/>
                 </DockPanel>
             </Border>
 
@@ -145,8 +163,8 @@
                         x:Name="MainTabControl"
                         Background="White"
                         SelectionChanged="MainTabControl_SelectionChanged">
-                <TabItem Header="Home">
-                    <Grid/>
+                <TabItem Header="Home" x:Name="HomeTab">
+                    <Grid x:Name="HomeTabContent"/>
                 </TabItem>
             </TabControl>
 

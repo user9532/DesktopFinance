@@ -7,6 +7,7 @@ using Microsoft.Win32;
 using System;
 using System.ComponentModel;
 using System.Linq;
+using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -25,6 +26,134 @@ namespace FinanceApp
             InitializeComponent();
             _db = new DatabaseManager();
             _db.InitializeDatabase();
+            LoadNavTree();
+
+            _homeView = new HomeView(_db);
+            HomeTabContent.Children.Add(_homeView);
+        }
+
+        private readonly HomeView _homeView;
+
+        // ── navigation tree ─────────────────────────────────────────────────
+
+        // AccountType values, each under its own top-level branch, in display order.
+        private static readonly (string Branch, string AccountType)[] NavBranches =
+        {
+            ("Bank",            "Bank"),
+            ("Credit Card",     "Credit Card"),
+            ("Investment",      "Investment"),
+            ("Other Asset",     "Other Asset"),
+            ("Loan",            "Loan"),
+            ("Other Liability", "Other Liability"),
+        };
+
+        public void LoadNavTree()
+        {
+            NavTree.Items.Clear();
+
+            using var conn = _db.OpenConnection();
+
+            foreach (var (branch, accountType) in NavBranches)
+            {
+                var branchNode = new TreeViewItem
+                {
+                    Header     = branch.ToUpperInvariant(),
+                    FontWeight = FontWeights.Bold,
+                    IsExpanded = true
+                };
+
+                using var cmd = new SqliteCommand(
+                    "SELECT AccountName FROM AccountChart WHERE AccountType = @t ORDER BY AccountName;", conn);
+                cmd.Parameters.AddWithValue("@t", accountType);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    var accountName = r.GetString(0);
+                    var leafNode = new TreeViewItem
+                    {
+                        Header     = accountName,
+                        FontWeight = FontWeights.Normal,
+                        Tag        = (accountType, accountName)
+                    };
+                    // PreviewMouseLeftButtonUp fires on every click, even when the item
+                    // was already selected (SelectedItemChanged only fires on an actual
+                    // selection change, so re-clicking the same leaf after focus moved
+                    // to another tab would otherwise do nothing).
+                    leafNode.PreviewMouseLeftButtonUp += NavTreeLeaf_Click;
+                    branchNode.Items.Add(leafNode);
+                }
+
+                NavTree.Items.Add(branchNode);
+            }
+        }
+
+        public void RefreshNavTree() => LoadNavTree();
+
+        private void NavTreeLeaf_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is not TreeViewItem { Tag: ValueTuple<string, string> tag }) return;
+
+            // Only handle clicks on this item itself, not bubbled clicks from a
+            // nested item (not applicable here since leaves have no children, but
+            // keeps the handler correct if that ever changes).
+            if (!ReferenceEquals(e.OriginalSource is DependencyObject d
+                    ? FindAncestorTreeViewItem(d) : null, sender)) return;
+
+            e.Handled = true;
+            NavigateToAccount(tag.Item1, tag.Item2);
+        }
+
+        private static TreeViewItem? FindAncestorTreeViewItem(DependencyObject d)
+        {
+            while (d != null)
+            {
+                if (d is TreeViewItem tvi) return tvi;
+                d = VisualTreeHelper.GetParent(d);
+            }
+            return null;
+        }
+
+        private void NavigateToAccount(string accountType, string accountName)
+        {
+            switch (accountType)
+            {
+                case "Bank":
+                    ActivateOrOpenStatement(accountName);
+                    break;
+                case "Credit Card":
+                    ActivateOrOpenCreditCardStatement(accountName);
+                    break;
+                case "Investment":
+                    ActivateOrOpenInvestmentStatementByAccount(accountName);
+                    break;
+                case "Other Asset":
+                    ActivateOrOpenOtherAccountStatement(accountName);
+                    break;
+                case "Loan":
+                    ActivateOrOpenLoanStatement(accountName);
+                    break;
+                case "Other Liability":
+                    ActivateOrOpenOtherLiabilityStatement(accountName);
+                    break;
+            }
+        }
+
+        private void ActivateOrOpenInvestmentStatementByAccount(string account)
+        {
+            var header = $"Investment: {account}";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (GetTabHeaderText(item) == header)
+                {
+                    (item.Content as InvestmentStatementView)?.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new InvestmentStatementView(_db, account);
+            AddClosableTab(header, view);
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e) => Close();
@@ -189,6 +318,57 @@ namespace FinanceApp
             }
         }
 
+        private void ExportTransactions_Click(object sender, RoutedEventArgs e)
+        {
+            var saveDlg = new SaveFileDialog
+            {
+                Title      = "Export Transactions",
+                Filter     = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                FileName   = $"Transactions_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
+                DefaultExt = ".csv"
+            };
+            if (saveDlg.ShowDialog() != true) return;
+
+            try
+            {
+                var columns = new[]
+                {
+                    "Account", "Date", "CheckNo", "Type", "Amount", "Name", "Memo",
+                    "Category", "TrnType", "Source", "Clear", "FinancialId", "Action",
+                    "Symbol", "Quantity", "Price", "Commission"
+                };
+
+                var sb = new StringBuilder();
+                sb.AppendLine(string.Join(",", columns));
+
+                using var conn = _db.OpenConnection();
+                using var cmd = new SqliteCommand(
+                    $"SELECT {string.Join(", ", columns)} FROM Transactions;", conn);
+                using var r = cmd.ExecuteReader();
+                while (r.Read())
+                {
+                    var fields = new string[columns.Length];
+                    for (int i = 0; i < columns.Length; i++)
+                        fields[i] = CsvEscape(r.IsDBNull(i) ? "" : r.GetValue(i).ToString() ?? "");
+                    sb.AppendLine(string.Join(",", fields));
+                }
+
+                File.WriteAllText(saveDlg.FileName, sb.ToString(), Encoding.UTF8);
+
+                MessageBox.Show($"Transactions exported successfully:\n{saveDlg.FileName}",
+                    "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Export failed:\n\n{ex.Message}",
+                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static string CsvEscape(string s) =>
+            s.Contains(',') || s.Contains('"') || s.Contains('\n')
+                ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
+
         private string GetAccountType(string accountName)
         {
             using var conn = _db.OpenConnection();
@@ -337,7 +517,11 @@ namespace FinanceApp
                     break;
             }
 
-            if (added) RefreshAllStatementCategories();
+            if (added)
+            {
+                RefreshAllStatementCategories();
+                RefreshNavTree();
+            }
         }
 
         private void EditAccount_Click(object sender, RoutedEventArgs e)
@@ -356,7 +540,10 @@ namespace FinanceApp
             }
 
             if (new EditAccountDialog(_db, account) { Owner = this }.ShowDialog() == true)
+            {
                 RefreshAllStatementCategories();
+                RefreshNavTree();
+            }
         }
 
         private bool AccountInTransactions(string accountName)
@@ -419,7 +606,8 @@ namespace FinanceApp
                 if (item.Content is AccountStatementView existing
                     && GetTabHeaderText(item) == tabHeader)
                 {
-                    existing.Refresh();
+                    if (!existing.HasUnsavedChanges)
+                        existing.Refresh();
                     MainTabControl.SelectedItem = item;
                     return;
                 }
@@ -451,6 +639,8 @@ namespace FinanceApp
                 invView.Refresh();
             else if (tab.Content is PortfolioView pfView)
                 pfView.Refresh();
+            else if (ReferenceEquals(tab, HomeTab))
+                _homeView.Refresh();
         }
 
         private static string GetTabHeaderText(TabItem tab)
@@ -506,7 +696,8 @@ namespace FinanceApp
                 if (item.Content is CreditCardStatementView existing
                     && GetTabHeaderText(item) == tabHeader)
                 {
-                    existing.Refresh();
+                    if (!existing.HasUnsavedChanges)
+                        existing.Refresh();
                     MainTabControl.SelectedItem = item;
                     return;
                 }
@@ -533,7 +724,8 @@ namespace FinanceApp
                 if (item.Content is OtherAccountStatementView existing
                     && GetTabHeaderText(item) == tabHeader)
                 {
-                    existing.Refresh();
+                    if (!existing.HasUnsavedChanges)
+                        existing.Refresh();
                     MainTabControl.SelectedItem = item;
                     return;
                 }
@@ -560,7 +752,8 @@ namespace FinanceApp
                 if (item.Content is OtherLiabilityStatementView existing
                     && GetTabHeaderText(item) == tabHeader)
                 {
-                    existing.Refresh();
+                    if (!existing.HasUnsavedChanges)
+                        existing.Refresh();
                     MainTabControl.SelectedItem = item;
                     return;
                 }
@@ -592,6 +785,11 @@ namespace FinanceApp
             AddClosableTab(tabHeader, view);
         }
 
+        private void About_Click(object sender, RoutedEventArgs e)
+        {
+            new AboutDialog { Owner = this }.ShowDialog();
+        }
+
         private void CashFlowStatement_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new CashFlowDateDialog { Owner = this };
@@ -619,6 +817,7 @@ namespace FinanceApp
             var dlg = new RecurringPaymentDialog(_db) { Owner = this };
             if (dlg.ShowDialog() != true) return;
             ActivateOrOpenRecurring();
+            _homeView.Refresh();
         }
 
         private void RecurringReceipt_Click(object sender, RoutedEventArgs e)
@@ -626,12 +825,17 @@ namespace FinanceApp
             var dlg = new RecurringReceiptDialog(_db) { Owner = this };
             if (dlg.ShowDialog() != true) return;
             ActivateOrOpenRecurring();
+            _homeView.Refresh();
         }
 
         private void ViewRecurring_Click(object sender, RoutedEventArgs e)
         {
             ActivateOrOpenRecurring();
         }
+
+        public void ActivateOrOpenRecurringPublic() => ActivateOrOpenRecurring();
+
+        public void RefreshHome() => _homeView.Refresh();
 
         private void ActivateOrOpenRecurring()
         {
@@ -686,6 +890,7 @@ namespace FinanceApp
                 else if (item.Content is LoanInterestView liv && liv.Account == account)
                     liv.Refresh();
             }
+            _homeView.Refresh();
         }
 
         public void ActivateOrOpenLoanInterest(string account)

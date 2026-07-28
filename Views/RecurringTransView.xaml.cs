@@ -101,6 +101,26 @@ namespace FinanceApp.Views
             ReceiptsGrid.ItemsSource = receipts;
         }
 
+        private void NewPayment_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new RecurringPaymentDialog(_db) { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() == true)
+            {
+                LoadData();
+                (Window.GetWindow(this) as MainWindow)?.RefreshHome();
+            }
+        }
+
+        private void NewReceipt_Click(object sender, RoutedEventArgs e)
+        {
+            var dlg = new RecurringReceiptDialog(_db) { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() == true)
+            {
+                LoadData();
+                (Window.GetWindow(this) as MainWindow)?.RefreshHome();
+            }
+        }
+
         private void ViewPaymentRow_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is RecurringTransRow row)
@@ -121,7 +141,10 @@ namespace FinanceApp.Views
                 var detail = new RecurringDetailDialog(_db, row.Id, trType: 1)
                     { Owner = Window.GetWindow(this) };
                 if (detail.ShowDialog() == true)
+                {
                     LoadData();
+                    (Window.GetWindow(this) as MainWindow)?.RefreshHome();
+                }
             }
         }
 
@@ -132,7 +155,10 @@ namespace FinanceApp.Views
                 var detail = new RecurringDetailDialog(_db, row.Id, trType: 2)
                     { Owner = Window.GetWindow(this) };
                 if (detail.ShowDialog() == true)
+                {
                     LoadData();
+                    (Window.GetWindow(this) as MainWindow)?.RefreshHome();
+                }
             }
         }
     }
