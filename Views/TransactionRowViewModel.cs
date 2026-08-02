@@ -14,6 +14,7 @@ namespace FinanceApp.Views
         public long   RowId              { get; set; }
         public bool   IsNew              { get; set; }
         public bool   MatchedViaCategory { get; set; }
+        public bool   NameMatchedCatHistory { get; set; }
         public string AccountValue       { get; set; } = "";   // DB Account column
         public string OriginalCategory   { get; set; } = "";   // category at load time
         public bool   IsDirty            { get; set; }

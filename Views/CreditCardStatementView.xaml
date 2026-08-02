@@ -45,6 +45,7 @@
             <DataGrid.ContextMenu>
                 <ContextMenu>
                     <MenuItem Header="Delete…" Click="DeleteRow_Click"/>
+                    <MenuItem Header="Split…"  Click="SplitRow_Click"/>
                 </ContextMenu>
             </DataGrid.ContextMenu>
 

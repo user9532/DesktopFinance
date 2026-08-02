@@ -23,7 +23,7 @@
         <TextBlock Grid.Row="2" x:Name="TxtVersion" Text="Version 1.0"
                    Margin="0,0,0,10"/>
         <TextBlock Grid.Row="3" TextWrapping="Wrap"
-                   Text="A personal finance manager for tracking bank, credit card, investment, and loan accounts, budgets, and reports."/>
+                   Text="An open-source personal finance manager for tracking spending and managing a budget."/>
 
         <TextBlock Grid.Row="5" TextWrapping="Wrap" FontSize="11" Foreground="#666666"
                    Text="Built with .NET 8 / WPF (Windows Presentation Foundation), using SQLite as the local database engine."/>

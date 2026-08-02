@@ -1,7 +1,8 @@
 <Window x:Class="FinanceApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Finance" Height="600" Width="900" MinWidth="400" MinHeight="300"
+        Title="DesktopFinance" Height="600" Width="900" MinWidth="400" MinHeight="300"
+        Icon="Assets/AppIcon.ico"
         Closing="MainWindow_Closing">
 
     <Window.Resources>
@@ -80,14 +81,47 @@
             <MenuItem Header="_Reports">
                 <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>
                 <MenuItem Header="_Budget vs Actual"     Click="BudgetActual_Click"/>
-                <MenuItem Header="_Drilldown Category"   Click="DrilldownCategory_Click"/>
                 <MenuItem Header="_Net Worth Statement"  Click="NetWorthStatement_Click"/>
                 <MenuItem Header="_Cash Flow Statement"  Click="CashFlowStatement_Click"/>
+                <MenuItem Header="_Drilldown Category"   Click="DrilldownCategory_Click"/>
             </MenuItem>
             <MenuItem Header="_Help">
                 <MenuItem Header="_About" Click="About_Click"/>
             </MenuItem>
         </Menu>
+
+        <!-- Toolbar -->
+        <ToolBarTray DockPanel.Dock="Top">
+            <ToolBar>
+                <Button Click="ImportQfx_Click"     ToolTip="Import QFX Data">
+                    <Image Source="Assets/Toolbar/ImportQfx.png"     Width="24" Height="24"/>
+                </Button>
+                <Separator/>
+                <Button Click="NewAccount_Click"    ToolTip="New Account">
+                    <Image Source="Assets/Toolbar/NewAccount.png"    Width="24" Height="24"/>
+                </Button>
+                <Button Click="EditAccount_Click"   ToolTip="Edit Account">
+                    <Image Source="Assets/Toolbar/EditAccount.png"   Width="24" Height="24"/>
+                </Button>
+                <Separator/>
+                <Button Click="NewCategory_Click"   ToolTip="New Category">
+                    <Image Source="Assets/Toolbar/NewCategory.png"   Width="24" Height="24"/>
+                </Button>
+                <Button Click="EditCategory_Click"  ToolTip="Edit Category">
+                    <Image Source="Assets/Toolbar/EditCategory.png"  Width="24" Height="24"/>
+                </Button>
+                <Button Click="EnterBudget_Click"   ToolTip="Enter Budget">
+                    <Image Source="Assets/Toolbar/EnterBudget.png"   Width="24" Height="24"/>
+                </Button>
+                <Separator/>
+                <Button Click="AddSecurities_Click" ToolTip="Add Securities">
+                    <Image Source="Assets/Toolbar/AddSecurities.png" Width="24" Height="24"/>
+                </Button>
+                <Button Click="AddQuotes_Click"     ToolTip="Add Quotes">
+                    <Image Source="Assets/Toolbar/AddQuotes.png"     Width="24" Height="24"/>
+                </Button>
+            </ToolBar>
+        </ToolBarTray>
 
         <!-- Status bar — must appear before the fill Grid in DockPanel order -->
         <StatusBar DockPanel.Dock="Bottom"

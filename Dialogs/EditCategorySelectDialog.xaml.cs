@@ -19,19 +19,23 @@ namespace FinanceApp.Dialogs
         {
             using var conn = db.OpenConnection();
             using var cmd = new SqliteCommand(
-                "SELECT AccountName FROM AccountChart " +
+                "SELECT AccountName, AccountGroup FROM AccountChart " +
                 "WHERE AccountGroup IN ('Expense','Income') " +
                 "ORDER BY AccountName;", conn);
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
-                LbCategories.Items.Add(reader.GetString(0));
+                LbCategories.Items.Add(new CategoryRow
+                {
+                    Name  = reader.GetString(0),
+                    Group = reader.IsDBNull(1) ? "" : reader.GetString(1)
+                });
         }
 
         private bool TryCommit()
         {
-            if (LbCategories.SelectedItem is string s && s.Length > 0)
+            if (LbCategories.SelectedItem is CategoryRow row)
             {
-                SelectedCategory = s;
+                SelectedCategory = row.Name;
                 DialogResult = true;
                 return true;
             }
@@ -43,5 +47,11 @@ namespace FinanceApp.Dialogs
         private void LbCategories_DoubleClick(object sender, MouseButtonEventArgs e) => TryCommit();
 
         private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+
+        private class CategoryRow
+        {
+            public string Name  { get; set; } = "";
+            public string Group { get; set; } = "";
+        }
     }
 }

@@ -270,6 +270,36 @@ namespace FinanceApp
                 e.Cancel = true;
         }
 
+        // Saves any unsaved edits in open Account/Credit Card/Other Asset/Other
+        // Liability Statement tabs without prompting. Used before generating a
+        // report so it reflects the latest data.
+        private void SaveAllUnsavedStatements()
+        {
+            foreach (var view in MainTabControl.Items.OfType<TabItem>()
+                         .Select(t => t.Content as AccountStatementView)
+                         .OfType<AccountStatementView>()
+                         .Where(v => v.HasUnsavedChanges))
+                view.SaveChanges();
+
+            foreach (var view in MainTabControl.Items.OfType<TabItem>()
+                         .Select(t => t.Content as CreditCardStatementView)
+                         .OfType<CreditCardStatementView>()
+                         .Where(v => v.HasUnsavedChanges))
+                view.SaveChanges();
+
+            foreach (var view in MainTabControl.Items.OfType<TabItem>()
+                         .Select(t => t.Content as OtherAccountStatementView)
+                         .OfType<OtherAccountStatementView>()
+                         .Where(v => v.HasUnsavedChanges))
+                view.SaveChanges();
+
+            foreach (var view in MainTabControl.Items.OfType<TabItem>()
+                         .Select(t => t.Content as OtherLiabilityStatementView)
+                         .OfType<OtherLiabilityStatementView>()
+                         .Where(v => v.HasUnsavedChanges))
+                view.SaveChanges();
+        }
+
         private void ImportQfx_Click(object sender, RoutedEventArgs e)
         {
             var openDlg = new OpenFileDialog
@@ -465,6 +495,7 @@ namespace FinanceApp
 
         private void IncomeExpenses_Click(object sender, RoutedEventArgs e)
         {
+            SaveAllUnsavedStatements();
             var dlg = new IncomeExpensesDateDialog { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
@@ -475,6 +506,7 @@ namespace FinanceApp
 
         private void DrilldownCategory_Click(object sender, RoutedEventArgs e)
         {
+            SaveAllUnsavedStatements();
             var dlg = new DrilldownCategoryDialog(_db) { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
@@ -485,6 +517,7 @@ namespace FinanceApp
 
         private void BudgetActual_Click(object sender, RoutedEventArgs e)
         {
+            SaveAllUnsavedStatements();
             var dlg = new IncomeExpensesDateDialog { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
@@ -521,6 +554,7 @@ namespace FinanceApp
             {
                 RefreshAllStatementCategories();
                 RefreshNavTree();
+                _homeView.Refresh();
             }
         }
 
@@ -543,6 +577,7 @@ namespace FinanceApp
             {
                 RefreshAllStatementCategories();
                 RefreshNavTree();
+                _homeView.Refresh();
             }
         }
 
@@ -765,6 +800,7 @@ namespace FinanceApp
 
         private void NetWorthStatement_Click(object sender, RoutedEventArgs e)
         {
+            SaveAllUnsavedStatements();
             var dlg = new NetWorthDateDialog { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
@@ -792,6 +828,7 @@ namespace FinanceApp
 
         private void CashFlowStatement_Click(object sender, RoutedEventArgs e)
         {
+            SaveAllUnsavedStatements();
             var dlg = new CashFlowDateDialog { Owner = this };
             if (dlg.ShowDialog() != true) return;
 

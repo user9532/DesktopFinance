@@ -1,4 +1,5 @@
 using FinanceApp.Data;
+using FinanceApp.Dialogs;
 using Microsoft.Data.Sqlite;
 using System;
 using System.Collections.Generic;
@@ -193,6 +194,8 @@ namespace FinanceApp.Views
         private void SaveRow(SqliteConnection conn, TransactionRowViewModel row)
         {
             var cleanMemo = CleanText(row.Memo);
+            var cleanName = CleanText(row.Name);
+            var isNewRow  = row.IsNew;
             var date      = row.DateValue?.ToString("yyyy-MM-dd") ?? "";
 
             // Payment field = Charge (CREDIT), Deposit field = Payment (DEBIT)
@@ -250,7 +253,18 @@ namespace FinanceApp.Views
                 && !string.IsNullOrWhiteSpace(cleanMemo)
                 && !string.IsNullOrWhiteSpace(row.DisplayCategory))
             {
-                UpdateCatHistory(conn, cleanMemo, row.DisplayCategory);
+                UpdateCatHistory(conn, cleanMemo, row.DisplayCategory, amount);
+            }
+
+            // For a manually-added row whose Name had no CatHistory match, save
+            // the entered Name/Category/Amount as a new CatHistory entry.
+            if (isNewRow
+                && !row.NameMatchedCatHistory
+                && !row.MatchedViaCategory
+                && !string.IsNullOrWhiteSpace(cleanName)
+                && !string.IsNullOrWhiteSpace(row.DisplayCategory))
+            {
+                UpdateCatHistory(conn, cleanName, row.DisplayCategory, amount);
             }
 
             row.OriginalCategory = row.DisplayCategory;
@@ -258,7 +272,7 @@ namespace FinanceApp.Views
             row.IsNew   = false;
         }
 
-        private static void UpdateCatHistory(SqliteConnection conn, string description, string category)
+        private static void UpdateCatHistory(SqliteConnection conn, string description, string category, decimal amount = 0)
         {
             using var chk = new SqliteCommand(
                 "SELECT Category FROM CatHistory WHERE Description=@d;", conn);
@@ -268,9 +282,10 @@ namespace FinanceApp.Views
             if (existing is null)
             {
                 using var ins = new SqliteCommand(
-                    "INSERT INTO CatHistory(Description,Category,Amount) VALUES(@d,@c,0);", conn);
+                    "INSERT INTO CatHistory(Description,Category,Amount) VALUES(@d,@c,@a);", conn);
                 ins.Parameters.AddWithValue("@d", description);
                 ins.Parameters.AddWithValue("@c", category);
+                ins.Parameters.AddWithValue("@a", (double)amount);
                 ins.ExecuteNonQuery();
             }
             else if (existing != category)
@@ -294,6 +309,15 @@ namespace FinanceApp.Views
 
             _hasChanges = true;
 
+            // When the Name column commits on a new row, look up CatHistory
+            // and auto-fill Category and Amount from the last known entry.
+            if (e.Column == TrGrid.Columns[1]
+                && e.Row.DataContext is TransactionRowViewModel newRow
+                && newRow.IsNew)
+            {
+                Dispatcher.BeginInvoke(new Action(() => AutoFillFromCatHistory(newRow)));
+            }
+
             // When the Category combo commits, sync CatHistory using the row's Memo.
             if (e.Column == TrGrid.Columns[2]
                 && e.Row.DataContext is TransactionRowViewModel row
@@ -309,6 +333,34 @@ namespace FinanceApp.Views
             }
 
             Dispatcher.BeginInvoke(new Action(RecalcBalance));
+        }
+
+        private void AutoFillFromCatHistory(TransactionRowViewModel row)
+        {
+            var name = row.Name?.Trim();
+            if (string.IsNullOrEmpty(name)) return;
+
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT Category, Amount FROM CatHistory WHERE Description = @d LIMIT 1;", conn);
+            cmd.Parameters.AddWithValue("@d", name);
+            using var r = cmd.ExecuteReader();
+            if (!r.Read())
+            {
+                row.NameMatchedCatHistory = false;
+                return;
+            }
+
+            row.NameMatchedCatHistory = true;
+
+            var cat = r.IsDBNull(0) ? "" : r.GetString(0);
+            var amt = r.IsDBNull(1) ? 0m : (decimal)r.GetDouble(1);
+
+            if (!string.IsNullOrEmpty(cat))
+                row.DisplayCategory = cat;
+
+            if (amt > 0 && row.PaymentDecimal == 0 && row.DepositDecimal == 0)
+                row.Payment = amt.ToString("N2");
         }
 
         private void Clear_Click(object sender, RoutedEventArgs e)
@@ -354,6 +406,37 @@ namespace FinanceApp.Views
             _allRows.Remove(row);
             _view.Remove(row);
             RecalcBalance();
+        }
+
+        private void SplitRow_Click(object sender, RoutedEventArgs e)
+        {
+            if (TrGrid.SelectedItem is not TransactionRowViewModel row) return;
+
+            if (row.IsNew)
+            {
+                MessageBox.Show("Save new rows before splitting.",
+                    "Cannot Split", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            if (row.MatchedViaCategory)
+            {
+                MessageBox.Show(
+                    "Split is not available for transactions matched via the Category column.",
+                    "Cannot Split", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            // Auto-save any pending edits so the DB is consistent before the split
+            if (_hasChanges) SaveAll();
+
+            var dlg = new SplitTransactionDialog(_db, row, Categories, _account)
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            if (dlg.ShowDialog() == true)
+                LoadData();   // Reload fresh from DB after the split
         }
 
         private static T? FindParent<T>(DependencyObject? child) where T : DependencyObject

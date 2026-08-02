@@ -93,10 +93,10 @@ namespace FinanceApp.Data
                 var trnType   = t.TrnAmt < 0 ? "CREDIT" : "DEBIT";
                 var absAmount = (double)Math.Abs(t.TrnAmt);
 
-                // Clean memo for CatHistory lookup
+                // Clean memo for storage
                 var cleanMemo = CleanText(t.Memo);
 
-                // Look up category from CatHistory
+                // Look up category from CatHistory, keyed on Description (matches MEMO)
                 var category = LookupCatHistory(conn, cleanMemo);
 
                 using var cmd = new SqliteCommand(@"

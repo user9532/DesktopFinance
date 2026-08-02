@@ -15,8 +15,18 @@ namespace FinanceApp.Dialogs
             _db           = db;
             _originalName = categoryName;
             TxtName.Text  = categoryName;
+            TxtGroup.Text = LoadAccountGroup(categoryName);
             TxtName.SelectAll();
             TxtName.Focus();
+        }
+
+        private string LoadAccountGroup(string categoryName)
+        {
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT AccountGroup FROM AccountChart WHERE AccountName = @name;", conn);
+            cmd.Parameters.AddWithValue("@name", categoryName);
+            return cmd.ExecuteScalar() as string ?? "";
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)

@@ -195,6 +195,8 @@ namespace FinanceApp.Views
         private void SaveRow(SqliteConnection conn, TransactionRowViewModel row)
         {
             var cleanMemo = CleanText(row.Memo);
+            var cleanName = CleanText(row.Name);
+            var isNewRow  = row.IsNew;
             var date      = row.DateValue?.ToString("yyyy-MM-dd") ?? "";
 
             // Determine amount & TrnType from Payment/Deposit strings
@@ -252,9 +254,19 @@ namespace FinanceApp.Views
                 cmd.ExecuteNonQuery();
             }
 
-            // Update CatHistory keyed on Name when an account-matched row has a name and category
-            var cleanName = CleanText(row.Name);
+            // Update CatHistory keyed on Memo (matches QfxImporter's MEMO-based lookup)
             if (!row.MatchedViaCategory
+                && !string.IsNullOrWhiteSpace(cleanMemo)
+                && !string.IsNullOrWhiteSpace(row.DisplayCategory))
+            {
+                UpdateCatHistory(conn, cleanMemo, row.DisplayCategory, amount);
+            }
+
+            // For a manually-added row whose Name had no CatHistory match, save
+            // the entered Name/Category/Amount as a new CatHistory entry.
+            if (isNewRow
+                && !row.NameMatchedCatHistory
+                && !row.MatchedViaCategory
                 && !string.IsNullOrWhiteSpace(cleanName)
                 && !string.IsNullOrWhiteSpace(row.DisplayCategory))
             {
@@ -327,7 +339,13 @@ namespace FinanceApp.Views
                 "SELECT Category, Amount FROM CatHistory WHERE Description = @d LIMIT 1;", conn);
             cmd.Parameters.AddWithValue("@d", name);
             using var r = cmd.ExecuteReader();
-            if (!r.Read()) return;
+            if (!r.Read())
+            {
+                row.NameMatchedCatHistory = false;
+                return;
+            }
+
+            row.NameMatchedCatHistory = true;
 
             var cat = r.IsDBNull(0) ? "" : r.GetString(0);
             var amt = r.IsDBNull(1) ? 0m : (decimal)r.GetDouble(1);
