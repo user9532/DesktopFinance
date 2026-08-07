@@ -1,7 +1,11 @@
 using FinanceApp.Data;
 using Microsoft.Data.Sqlite;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace FinanceApp.Views
@@ -11,6 +15,7 @@ namespace FinanceApp.Views
         private readonly DatabaseManager _db;
         private readonly DateTime _start;
         private readonly DateTime _end;
+        private List<NetWorthRow> _rows = new();
 
         public CashFlowView(DatabaseManager db, DateTime start, DateTime end)
         {
@@ -36,51 +41,31 @@ namespace FinanceApp.Views
 
             var accounts = LoadNonBankAccounts(conn);
 
-            // ── Cash Inflows: Account-side DEBIT + Category-side DEBIT ──
+            // ── Cash Inflows: Account-side CREDIT + Category-side DEBIT ──
             rows.Add(new NetWorthRow { Label = "Cash Inflows", IsBold = true });
 
             decimal totalInflows = 0;
             foreach (var (name, portfolio) in accounts)
             {
-                var amt = SumFlow(conn, name, startStr, endStr,
-                                  accountSideTrn: "DEBIT", categorySideTrn: "DEBIT");
+                var amt = SumFlow(conn, name, portfolio, startStr, endStr,
+                                  accountSideTrn: "CREDIT", categorySideTrn: "DEBIT");
                 totalInflows += amt;
                 if (amt != 0)
                     rows.Add(new NetWorthRow { Label = name, Amount = amt, IsIndented = true });
-
-                // Portfolio flows are reversed: CREDIT counts as inflow
-                if (!string.IsNullOrEmpty(portfolio))
-                {
-                    var pAmt = SumFlow(conn, portfolio, startStr, endStr,
-                                       accountSideTrn: "CREDIT", categorySideTrn: "CREDIT");
-                    totalInflows += pAmt;
-                    if (pAmt != 0)
-                        rows.Add(new NetWorthRow { Label = portfolio, Amount = pAmt, IsIndented = true });
-                }
             }
             rows.Add(new NetWorthRow { Label = "Total Cash Inflows", Amount = totalInflows, IsBold = true });
 
-            // ── Cash Outflows: Account-side CREDIT + Category-side CREDIT ──
+            // ── Cash Outflows: Account-side DEBIT + Category-side CREDIT ──
             rows.Add(new NetWorthRow { Label = "Cash Outflows", IsBold = true });
 
             decimal totalOutflows = 0;
             foreach (var (name, portfolio) in accounts)
             {
-                var amt = SumFlow(conn, name, startStr, endStr,
-                                  accountSideTrn: "CREDIT", categorySideTrn: "CREDIT");
+                var amt = SumFlow(conn, name, portfolio, startStr, endStr,
+                                  accountSideTrn: "DEBIT", categorySideTrn: "CREDIT");
                 totalOutflows += amt;
                 if (amt != 0)
                     rows.Add(new NetWorthRow { Label = name, Amount = amt, IsIndented = true });
-
-                // Portfolio flows are reversed: DEBIT counts as outflow
-                if (!string.IsNullOrEmpty(portfolio))
-                {
-                    var pAmt = SumFlow(conn, portfolio, startStr, endStr,
-                                       accountSideTrn: "DEBIT", categorySideTrn: "DEBIT");
-                    totalOutflows += pAmt;
-                    if (pAmt != 0)
-                        rows.Add(new NetWorthRow { Label = portfolio, Amount = pAmt, IsIndented = true });
-                }
             }
             rows.Add(new NetWorthRow { Label = "Total Cash Outflows", Amount = totalOutflows, IsBold = true });
 
@@ -104,8 +89,43 @@ namespace FinanceApp.Views
                 IsBold = true
             });
 
+            _rows = rows;
             RowsHost.ItemsSource = rows;
         }
+
+        private void Export_Click(object sender, RoutedEventArgs e)
+        {
+            var saveDlg = new SaveFileDialog
+            {
+                Title      = "Export Statement of Cash Flows",
+                Filter     = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+                FileName   = $"CashFlowStatement_{DateTime.Now:yyyyMMdd_HHmmss}.csv",
+                DefaultExt = ".csv"
+            };
+            if (saveDlg.ShowDialog() != true) return;
+
+            try
+            {
+                var sb = new StringBuilder();
+                sb.AppendLine("Label,Amount");
+                foreach (var row in _rows)
+                    sb.AppendLine($"{CsvEscape(row.Label)},{CsvEscape(row.AmountDisplay)}");
+
+                File.WriteAllText(saveDlg.FileName, sb.ToString(), Encoding.UTF8);
+
+                MessageBox.Show($"Statement of Cash Flows exported successfully:\n{saveDlg.FileName}",
+                    "Export Complete", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Export failed:\n\n{ex.Message}",
+                    "Export Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static string CsvEscape(string s) =>
+            s.Contains(',') || s.Contains('"') || s.Contains('\n')
+                ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
 
         private static List<(string Name, string Portfolio)> LoadNonBankAccounts(SqliteConnection conn)
         {
@@ -132,8 +152,9 @@ namespace FinanceApp.Views
         }
 
         // Account-column matches count amounts with accountSideTrn; Category-column
-        // matches count amounts with categorySideTrn.
-        private static decimal SumFlow(SqliteConnection conn, string account,
+        // matches (on both the account name and its Portfolio value, if any) count
+        // amounts with categorySideTrn.
+        private static decimal SumFlow(SqliteConnection conn, string account, string portfolio,
                                        string startStr, string endStr,
                                        string accountSideTrn, string categorySideTrn)
         {
@@ -161,6 +182,21 @@ namespace FinanceApp.Views
                   AND  Date >= @start AND Date <= @end;", conn))
             {
                 cmd.Parameters.AddWithValue("@acct",  account);
+                cmd.Parameters.AddWithValue("@trn",   categorySideTrn);
+                cmd.Parameters.AddWithValue("@start", startStr);
+                cmd.Parameters.AddWithValue("@end",   endStr);
+                total += Convert.ToDecimal(cmd.ExecuteScalar());
+            }
+
+            if (!string.IsNullOrEmpty(portfolio) && portfolio != account)
+            {
+                using var cmd = new SqliteCommand(@"
+                    SELECT COALESCE(SUM(Amount), 0)
+                    FROM   Transactions
+                    WHERE  Category = @port
+                      AND  TrnType = @trn
+                      AND  Date >= @start AND Date <= @end;", conn);
+                cmd.Parameters.AddWithValue("@port",  portfolio);
                 cmd.Parameters.AddWithValue("@trn",   categorySideTrn);
                 cmd.Parameters.AddWithValue("@start", startStr);
                 cmd.Parameters.AddWithValue("@end",   endStr);

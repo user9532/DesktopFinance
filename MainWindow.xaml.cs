@@ -47,6 +47,17 @@ namespace FinanceApp
             ("Other Liability", "Other Liability"),
         };
 
+        // Reports menu items, in the same order as the Reports menu, each paired
+        // with the click handler that already backs the corresponding MenuItem.
+        private (string Label, RoutedEventHandler Handler)[] ReportNavItems => new (string, RoutedEventHandler)[]
+        {
+            ("Income and Expenses", IncomeExpenses_Click),
+            ("Budget vs Actual",    BudgetActual_Click),
+            ("Net Worth Statement", NetWorthStatement_Click),
+            ("Cash Flow Statement", CashFlowStatement_Click),
+            ("Drilldown Category",  DrilldownCategory_Click),
+        };
+
         public void LoadNavTree()
         {
             NavTree.Items.Clear();
@@ -85,6 +96,32 @@ namespace FinanceApp
 
                 NavTree.Items.Add(branchNode);
             }
+
+            var reportsBranch = new TreeViewItem
+            {
+                Header     = "REPORTS",
+                FontWeight = FontWeights.Bold,
+                IsExpanded = true
+            };
+
+            foreach (var (label, handler) in ReportNavItems)
+            {
+                var leafNode = new TreeViewItem
+                {
+                    Header     = label,
+                    FontWeight = FontWeights.Normal
+                };
+                leafNode.PreviewMouseLeftButtonUp += (s, e) =>
+                {
+                    if (!ReferenceEquals(e.OriginalSource is DependencyObject d
+                            ? FindAncestorTreeViewItem(d) : null, leafNode)) return;
+                    e.Handled = true;
+                    handler(this, new RoutedEventArgs());
+                };
+                reportsBranch.Items.Add(leafNode);
+            }
+
+            NavTree.Items.Add(reportsBranch);
         }
 
         public void RefreshNavTree() => LoadNavTree();
@@ -146,14 +183,15 @@ namespace FinanceApp
             {
                 if (GetTabHeaderText(item) == header)
                 {
-                    (item.Content as InvestmentStatementView)?.Refresh();
+                    if (item.Content is InvestmentStatementView existing && !existing.HasUnsavedChanges)
+                        existing.Refresh();
                     MainTabControl.SelectedItem = item;
                     return;
                 }
             }
 
             var view = new InvestmentStatementView(_db, account);
-            AddClosableTab(header, view);
+            AddClosableTab(header, view, () => view.CanClose());
         }
 
         private void Exit_Click(object sender, RoutedEventArgs e) => Close();
@@ -252,7 +290,14 @@ namespace FinanceApp
                 .Where(v => v.HasUnsavedChanges)
                 .ToList();
 
-            if (!dirtyBank.Any() && !dirtyCc.Any() && !dirtyOther.Any() && !dirtyOtherLiability.Any()) return;
+            var dirtyInvestment = MainTabControl.Items
+                .OfType<TabItem>()
+                .Select(t => t.Content as InvestmentStatementView)
+                .OfType<InvestmentStatementView>()
+                .Where(v => v.HasUnsavedChanges)
+                .ToList();
+
+            if (!dirtyBank.Any() && !dirtyCc.Any() && !dirtyOther.Any() && !dirtyOtherLiability.Any() && !dirtyInvestment.Any()) return;
 
             var result = MessageBox.Show(
                 "There are unsaved changes in one or more account statement tabs.\n\n" +
@@ -265,6 +310,7 @@ namespace FinanceApp
                 foreach (var v in dirtyCc)              v.SaveChanges();
                 foreach (var v in dirtyOther)           v.SaveChanges();
                 foreach (var v in dirtyOtherLiability)  v.SaveChanges();
+                foreach (var v in dirtyInvestment)      v.SaveChanges();
             }
             else if (result == MessageBoxResult.Cancel)
                 e.Cancel = true;
@@ -296,6 +342,12 @@ namespace FinanceApp
             foreach (var view in MainTabControl.Items.OfType<TabItem>()
                          .Select(t => t.Content as OtherLiabilityStatementView)
                          .OfType<OtherLiabilityStatementView>()
+                         .Where(v => v.HasUnsavedChanges))
+                view.SaveChanges();
+
+            foreach (var view in MainTabControl.Items.OfType<TabItem>()
+                         .Select(t => t.Content as InvestmentStatementView)
+                         .OfType<InvestmentStatementView>()
                          .Where(v => v.HasUnsavedChanges))
                 view.SaveChanges();
         }
@@ -436,7 +488,7 @@ namespace FinanceApp
             }
 
             var view = new InvestmentStatementView(_db, account);
-            AddClosableTab(header, view);
+            AddClosableTab(header, view, () => view.CanClose());
         }
 
         private void StockSplit_Click(object sender, RoutedEventArgs e)
@@ -468,13 +520,14 @@ namespace FinanceApp
             {
                 if (GetTabHeaderText(item) == header)
                 {
-                    (item.Content as InvestmentStatementView)?.Refresh();
+                    if (item.Content is InvestmentStatementView existing && !existing.HasUnsavedChanges)
+                        existing.Refresh();
                     MainTabControl.SelectedItem = item;
                     return;
                 }
             }
             var view = new InvestmentStatementView(_db, account);
-            AddClosableTab(header, view);
+            AddClosableTab(header, view, () => view.CanClose());
         }
 
         public void ActivateOrOpenPortfolio(string portfolio)
@@ -670,7 +723,7 @@ namespace FinanceApp
 
             if (tab.Content is AccountStatementView view && !view.HasUnsavedChanges)
                 view.Refresh();
-            else if (tab.Content is InvestmentStatementView invView)
+            else if (tab.Content is InvestmentStatementView invView && !invView.HasUnsavedChanges)
                 invView.Refresh();
             else if (tab.Content is PortfolioView pfView)
                 pfView.Refresh();

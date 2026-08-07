@@ -10,11 +10,17 @@
                 BorderBrush="#CCCCCC"
                 BorderThickness="0,0,0,1"
                 Padding="6,5">
-            <StackPanel Orientation="Horizontal">
-                <Button Content="Transaction" Width="90" Margin="0,0,8,0" Click="Transaction_Click"/>
-                <Button Content="Trade"       Width="70" Margin="0,0,8,0" Click="Trade_Click"/>
-                <Button Content="Portfolio"   Width="80" Click="Portfolio_Click"/>
-            </StackPanel>
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                    <Button Content="Add Row" Width="76" Margin="0,0,6,0" Click="AddRow_Click"/>
+                    <Button Content="Save"    Width="76" Margin="0,0,14,0" Click="Save_Click"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                    <Button Content="Transaction" Width="90" Margin="0,0,8,0" Click="Transaction_Click"/>
+                    <Button Content="Trade"       Width="70" Margin="0,0,8,0" Click="Trade_Click"/>
+                    <Button Content="Portfolio"   Width="80" Click="Portfolio_Click"/>
+                </StackPanel>
+            </DockPanel>
         </Border>
 
         <!-- ── investment grid ────────────────────────────────────────── -->
@@ -23,63 +29,146 @@
                   CanUserSortColumns="False"
                   CanUserAddRows="False"
                   CanUserDeleteRows="False"
-                  IsReadOnly="True"
                   SelectionUnit="FullRow"
                   GridLinesVisibility="Horizontal"
-                  AlternatingRowBackground="#FAFAFA">
+                  AlternatingRowBackground="#FAFAFA"
+                  CellEditEnding="Grid_CellEditEnding"
+                  PreviewMouseRightButtonDown="TrGrid_PreviewMouseRightButtonDown">
+
+            <DataGrid.ContextMenu>
+                <ContextMenu>
+                    <MenuItem Header="Delete…" Click="DeleteRow_Click"/>
+                </ContextMenu>
+            </DataGrid.ContextMenu>
 
             <DataGrid.Columns>
 
-                <DataGridTextColumn Header="Date"       Binding="{Binding Date}"       Width="90"/>
-                <DataGridTextColumn Header="Check No"   Binding="{Binding CheckNo}"    Width="80"/>
-                <DataGridTextColumn Header="Name"       Binding="{Binding Name}"       Width="140"/>
-                <DataGridTextColumn Header="Category"   Binding="{Binding Category}"   Width="130"/>
-                <DataGridTextColumn Header="Memo"       Binding="{Binding Memo}"       Width="140"/>
-                <DataGridTextColumn Header="Action"     Binding="{Binding Action}"     Width="70"/>
-                <DataGridTextColumn Header="Symbol"     Binding="{Binding Symbol}"     Width="70"/>
+                <!-- Date -->
+                <DataGridTemplateColumn Header="Date" Width="100" SortMemberPath="DateDisplay">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DateDisplay}" Margin="3,1"
+                                       VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <DatePicker SelectedDate="{Binding DateValue, UpdateSourceTrigger=PropertyChanged}"
+                                        Loaded="DatePicker_Loaded"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
 
-                <DataGridTextColumn Header="Quantity"   Width="80"
-                                    Binding="{Binding Quantity, StringFormat=N4}">
+                <!-- Check No -->
+                <DataGridTextColumn Header="Check No"
+                                    Binding="{Binding CheckNo, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="76"/>
+
+                <!-- Name -->
+                <DataGridTextColumn Header="Name"
+                                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="130"/>
+
+                <!-- Category (ComboBox) -->
+                <DataGridTemplateColumn Header="Category" Width="130">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding DisplayCategory}" Margin="3,1"
+                                       VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <ComboBox IsEditable="True"
+                                      Text="{Binding DisplayCategory, UpdateSourceTrigger=PropertyChanged}"
+                                      Loaded="CategoryCombo_Loaded"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
+
+                <!-- Memo -->
+                <DataGridTextColumn Header="Memo"
+                                    Binding="{Binding Memo, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="130"/>
+
+                <!-- Action -->
+                <DataGridTextColumn Header="Action"
+                                    Binding="{Binding Action, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="64"/>
+
+                <!-- Symbol -->
+                <DataGridTextColumn Header="Symbol"
+                                    Binding="{Binding Symbol, UpdateSourceTrigger=PropertyChanged}"
+                                    Width="64"/>
+
+                <!-- Quantity -->
+                <DataGridTextColumn Header="Quantity" Width="80"
+                                    Binding="{Binding Quantity, StringFormat=N4, UpdateSourceTrigger=PropertyChanged}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Right"/>
                             <Setter Property="Margin" Value="0,0,4,0"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Price"      Width="80"
-                                    Binding="{Binding Price, StringFormat=N4}">
+                <!-- Price -->
+                <DataGridTextColumn Header="Price" Width="80"
+                                    Binding="{Binding Price, StringFormat=N4, UpdateSourceTrigger=PropertyChanged}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Right"/>
                             <Setter Property="Margin" Value="0,0,4,0"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
 
+                <!-- Commission -->
                 <DataGridTextColumn Header="Commission" Width="84"
-                                    Binding="{Binding Commission, StringFormat=N2}">
+                                    Binding="{Binding Commission, StringFormat=N2, UpdateSourceTrigger=PropertyChanged}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Right"/>
                             <Setter Property="Margin" Value="0,0,4,0"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
 
-                <DataGridTextColumn Header="Amount"  Width="90"
-                                    Binding="{Binding AmountDisplay}">
+                <!-- Amount -->
+                <DataGridTextColumn Header="Amount" Width="90"
+                                    Binding="{Binding AmountText, UpdateSourceTrigger=PropertyChanged}">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Right"/>
                             <Setter Property="Margin" Value="0,0,4,0"/>
                         </Style>
                     </DataGridTextColumn.ElementStyle>
+                    <DataGridTextColumn.EditingElementStyle>
+                        <Style TargetType="TextBox">
+                            <Setter Property="TextAlignment" Value="Right"/>
+                        </Style>
+                    </DataGridTextColumn.EditingElementStyle>
                 </DataGridTextColumn>
 
+                <!-- Balance (read-only) -->
                 <DataGridTextColumn Header="Balance" Width="90"
-                                    Binding="{Binding Balance, StringFormat=N2}">
+                                    Binding="{Binding Balance, StringFormat=N2}"
+                                    IsReadOnly="True">
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="HorizontalAlignment" Value="Right"/>

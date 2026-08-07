@@ -3,6 +3,18 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Name="Root">
 
+    <DockPanel>
+
+        <Border DockPanel.Dock="Top"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1"
+                Padding="6,5">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Export" Width="76" Click="Export_Click"/>
+            </StackPanel>
+        </Border>
+
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="0,20,0,20" HorizontalAlignment="Center">
 
@@ -36,4 +48,5 @@
 
         </StackPanel>
     </ScrollViewer>
+    </DockPanel>
 </UserControl>

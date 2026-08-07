@@ -15,12 +15,23 @@ namespace FinanceApp.Dialogs
             _db = db;
             DpStartDate.SelectedDate  = DateTime.Today;
             DpFirstPmnt.SelectedDate  = DateTime.Today;
+            LoadProceedsToOptions();
+        }
+
+        private void LoadProceedsToOptions()
+        {
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT AccountName FROM AccountChart WHERE AccountGroup IN ('Asset','Liability') ORDER BY AccountName;", conn);
+            using var r = cmd.ExecuteReader();
+            while (r.Read()) CbProceedsTo.Items.Add(r.GetString(0));
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
         {
             if (!Validate(out var name, out var date, out var firstPmnt, out var institution,
-                          out var loanAmount, out var numPayments, out var interestRate, out var escrow))
+                          out var loanAmount, out var numPayments, out var interestRate, out var escrow,
+                          out var proceedsTo))
                 return;
 
             if (_db.AccountExists(name))
@@ -34,13 +45,14 @@ namespace FinanceApp.Dialogs
 
             // Save to Transactions
             using (var cmd = new SqliteCommand(
-                "INSERT INTO Transactions (Account, Date, Name, Memo, TrnType, Amount) " +
-                "VALUES (@acct, @date, @name, 'Initial loan balance', 'CREDIT', @amt);", conn))
+                "INSERT INTO Transactions (Account, Date, Name, Memo, TrnType, Amount, Category) " +
+                "VALUES (@acct, @date, @name, 'Initial loan balance', 'CREDIT', @amt, @cat);", conn))
             {
                 cmd.Parameters.AddWithValue("@acct", name);
                 cmd.Parameters.AddWithValue("@date", date);
                 cmd.Parameters.AddWithValue("@name", institution);
                 cmd.Parameters.AddWithValue("@amt",  loanAmount);
+                cmd.Parameters.AddWithValue("@cat",  proceedsTo);
                 cmd.ExecuteNonQuery();
             }
 
@@ -104,9 +116,10 @@ namespace FinanceApp.Dialogs
         private bool Validate(out string name, out string date, out string firstPmnt,
                                out string institution,
                                out decimal loanAmount, out decimal numPayments,
-                               out decimal interestRate, out decimal escrow)
+                               out decimal interestRate, out decimal escrow,
+                               out string proceedsTo)
         {
-            name = institution = date = firstPmnt = "";
+            name = institution = date = firstPmnt = proceedsTo = "";
             loanAmount = numPayments = interestRate = escrow = 0;
 
             if (string.IsNullOrWhiteSpace(TxtAccountName.Text))
@@ -157,8 +170,15 @@ namespace FinanceApp.Dialogs
                 TxtEscrow.Focus();
                 return false;
             }
+            if (CbProceedsTo.SelectedItem is not string)
+            {
+                ShowWarning("Proceeds go to is required.");
+                CbProceedsTo.Focus();
+                return false;
+            }
 
             name        = TxtAccountName.Text.Trim();
+            proceedsTo  = (string)CbProceedsTo.SelectedItem!;
             date        = DpStartDate.SelectedDate!.Value.ToString("yyyy-MM-dd");
             firstPmnt   = DpFirstPmnt.SelectedDate!.Value.ToString("yyyy-MM-dd");
             institution = TxtInstitution.Text.Trim();
