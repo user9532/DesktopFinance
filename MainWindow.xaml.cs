@@ -55,6 +55,7 @@ namespace FinanceApp
             ("Budget vs Actual",    BudgetActual_Click),
             ("Net Worth Statement", NetWorthStatement_Click),
             ("Cash Flow Statement", CashFlowStatement_Click),
+            ("Investment Performance", InvestmentPerformance_Click),
             ("Drilldown Category",  DrilldownCategory_Click),
         };
 
@@ -902,6 +903,26 @@ namespace FinanceApp
             AddClosableTab(tabHeader, view);
         }
 
+        private void InvestmentPerformance_Click(object sender, RoutedEventArgs e)
+        {
+            SaveAllUnsavedStatements();
+            var tabHeader = "Investment Performance";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is InvestmentPerformanceView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new InvestmentPerformanceView(_db);
+            AddClosableTab(tabHeader, view);
+        }
+
         private void RecurringPayment_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new RecurringPaymentDialog(_db) { Owner = this };
@@ -942,7 +963,7 @@ namespace FinanceApp
             var view = new RecurringTransView(_db);
             AddClosableTab(tabHeader, view);
         }
-
+    
         private void LoanStatement_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new LoanSelectDialog(_db) { Owner = this };

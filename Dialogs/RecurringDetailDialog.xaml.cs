@@ -193,22 +193,6 @@ namespace FinanceApp.Dialogs
             DialogResult = true;
         }
 
-        private void Delete_Click(object sender, RoutedEventArgs e)
-        {
-            var confirm = MessageBox.Show(
-                "Are you sure you want to delete this recurring transaction?",
-                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-            if (confirm != MessageBoxResult.Yes) return;
-
-            using var conn = _db.OpenConnection();
-            using var cmd  = new SqliteCommand(
-                "DELETE FROM RecurTrans WHERE Id = @id;", conn);
-            cmd.Parameters.AddWithValue("@id", _id);
-            cmd.ExecuteNonQuery();
-
-            DialogResult = true;
-        }
-
         private static DateTime AdvanceDate(DateTime date, int frequency) => frequency switch
         {
             1   => date.AddDays(1),

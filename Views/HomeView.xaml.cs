@@ -276,7 +276,7 @@ namespace FinanceApp.Views
             if (Window.GetWindow(this) is MainWindow main)
                 main.ActivateOrOpenRecurringPublic();
         }
-
+  
         // ── dashboard: budget vs actual expense, latest available month ────
 
         private void LoadDashboard()

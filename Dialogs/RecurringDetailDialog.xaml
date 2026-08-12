@@ -66,7 +66,6 @@
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal"
                     HorizontalAlignment="Right" Margin="0,12,0,0">
             <Button Content="Post"   Width="80" Margin="0,0,8,0" Click="Post_Click"/>
-            <Button Content="Delete" Width="80" Margin="0,0,8,0" Click="Delete_Click"/>
             <Button Content="Cancel" Width="80" IsCancel="True"/>
         </StackPanel>
 

@@ -161,5 +161,30 @@ namespace FinanceApp.Views
                 }
             }
         }
+
+        private void EditPaymentRow_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not RecurringTransRow row) return;
+            if (row.TrType == 3) return; // Loan payments are edited via the loan flow, not here.
+
+            var dlg = new RecurringPaymentDialog(_db, row.Id) { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() == true)
+            {
+                LoadData();
+                (Window.GetWindow(this) as MainWindow)?.RefreshHome();
+            }
+        }
+
+        private void EditReceiptRow_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not Button btn || btn.Tag is not RecurringTransRow row) return;
+
+            var dlg = new RecurringReceiptDialog(_db, row.Id) { Owner = Window.GetWindow(this) };
+            if (dlg.ShowDialog() == true)
+            {
+                LoadData();
+                (Window.GetWindow(this) as MainWindow)?.RefreshHome();
+            }
+        }
     }
 }

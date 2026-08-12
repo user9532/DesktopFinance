@@ -17,6 +17,7 @@ namespace FinanceApp.Dialogs
             InitializeComponent();
             _db     = db;
             _months = new[] { M01, M02, M03, M04, M05, M06, M07, M08, M09, M10, M11, M12 };
+            M01.TextChanged += M01_TextChanged;
 
             LoadYears();
             LoadCategories(); // sets _ready = true and calls LoadData at the end
@@ -68,6 +69,8 @@ namespace FinanceApp.Dialogs
         private void LoadData()
         {
             foreach (var box in _months) box.Text = "";
+            ChkUseJanForAll.IsChecked  = false;
+            ChkUseJanForAll.IsEnabled  = false;
 
             if (CbCategory.SelectedItem is not string category) return;
             if (CbYear.SelectedItem is not int year) return;
@@ -89,6 +92,21 @@ namespace FinanceApp.Dialogs
                 if (amt != 0)
                     _months[idx].Text = ((decimal)amt).ToString("N2");
             }
+        }
+
+        // ── January-for-all-months ──────────────────────────────────────────
+
+        private void M01_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            ChkUseJanForAll.IsEnabled = !string.IsNullOrWhiteSpace(M01.Text);
+            if (!ChkUseJanForAll.IsEnabled)
+                ChkUseJanForAll.IsChecked = false;
+        }
+
+        private void ChkUseJanForAll_Checked(object sender, RoutedEventArgs e)
+        {
+            for (int i = 1; i < _months.Length; i++)
+                _months[i].Text = M01.Text;
         }
 
         // ── save ──────────────────────────────────────────────────────────

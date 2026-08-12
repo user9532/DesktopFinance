@@ -10,8 +10,8 @@ namespace FinanceApp.Data
 
         public DatabaseManager()
         {
-            var appFolder = AppDomain.CurrentDomain.BaseDirectory;
-            var dbFolder = Path.Combine(appFolder, "Database");
+            var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+            var dbFolder = Path.Combine(localAppData, "DesktopFinance", "Database");
             Directory.CreateDirectory(dbFolder);
             DbPath = Path.Combine(dbFolder, "MyFinance.fdb");
             _connectionString = $"Data Source={DbPath}";

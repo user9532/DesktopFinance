@@ -11,16 +11,84 @@ namespace FinanceApp.Dialogs
     {
         private readonly DatabaseManager _db;
         private readonly List<string> _allCategories = new();
+        private readonly long? _editId;
 
-        public RecurringReceiptDialog(DatabaseManager db)
+        public RecurringReceiptDialog(DatabaseManager db, long? editId = null)
         {
             InitializeComponent();
             _db = db;
+            _editId = editId;
             LoadAccounts();
             LoadCategories();
-            DpNextDue.SelectedDate = DateTime.Today;
-            CbFrequency.SelectedIndex = 3; // Monthly default
-            AddNewLine();
+
+            if (_editId is long id)
+            {
+                Title = "Edit Recurring Receipt";
+                BtnDelete.Visibility = Visibility.Visible;
+                LoadExisting(id);
+            }
+            else
+            {
+                DpNextDue.SelectedDate = DateTime.Today;
+                CbFrequency.SelectedIndex = 3; // Monthly default
+                AddNewLine();
+            }
+        }
+
+        private void LoadExisting(long id)
+        {
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT Name, Account, Amount, Category, Memo, Frequency, NextDue " +
+                "FROM RecurTrans WHERE Id = @id ORDER BY rowid;", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            using var rdr = cmd.ExecuteReader();
+
+            bool first = true;
+            while (rdr.Read())
+            {
+                var name     = rdr.IsDBNull(0) ? "" : rdr.GetString(0);
+                var account  = rdr.IsDBNull(1) ? "" : rdr.GetString(1);
+                var amount   = rdr.IsDBNull(2) ? 0.0 : rdr.GetDouble(2);
+                var category = rdr.IsDBNull(3) ? "" : rdr.GetString(3);
+                var memo     = rdr.IsDBNull(4) ? "" : rdr.GetString(4);
+                var freq     = rdr.IsDBNull(5) ? 30 : rdr.GetInt32(5);
+                var nextDue  = rdr.IsDBNull(6) ? "" : rdr.GetString(6);
+
+                if (first)
+                {
+                    CbAccount.SelectedItem = account;
+                    if (CbAccount.SelectedItem == null)
+                        CbAccount.Text = account;
+
+                    if (DateTime.TryParse(nextDue, out var nd))
+                        DpNextDue.SelectedDate = nd;
+                    else
+                        DpNextDue.SelectedDate = DateTime.Today;
+
+                    foreach (ComboBoxItem item in CbFrequency.Items)
+                        if ((string)item.Tag == freq.ToString())
+                        {
+                            CbFrequency.SelectedItem = item;
+                            break;
+                        }
+
+                    first = false;
+                }
+
+                var line = BuildLine();
+                ((TextBox)FindTagged(line, "Name")).Text     = name;
+                ((TextBox)FindTagged(line, "Amount")).Text   = amount.ToString("N2");
+                ((TextBox)FindTagged(line, "Memo")).Text     = memo;
+                var cbCategory = (ComboBox)FindTagged(line, "Category");
+                cbCategory.SelectedItem = category;
+                if (cbCategory.SelectedItem == null)
+                    cbCategory.Text = category;
+                LinesPanel.Children.Add(line);
+            }
+
+            if (LinesPanel.Children.Count == 0)
+                AddNewLine();
         }
 
         // ── data loading ──────────────────────────────────────────────────
@@ -176,9 +244,26 @@ namespace FinanceApp.Dialogs
             using var conn = _db.OpenConnection();
 
             long nextId;
-            using (var idCmd = new SqliteCommand(
-                "SELECT COALESCE(MAX(Id), 0) + 1 FROM RecurTrans;", conn))
+            string? lastPosted = null;
+            if (_editId is long editId)
             {
+                nextId = editId;
+                using (var lpCmd = new SqliteCommand(
+                    "SELECT LastPosted FROM RecurTrans WHERE Id = @id LIMIT 1;", conn))
+                {
+                    lpCmd.Parameters.AddWithValue("@id", editId);
+                    var val = lpCmd.ExecuteScalar();
+                    lastPosted = (val == null || val == DBNull.Value) ? null : (string)val;
+                }
+                using var delCmd = new SqliteCommand(
+                    "DELETE FROM RecurTrans WHERE Id = @id;", conn);
+                delCmd.Parameters.AddWithValue("@id", editId);
+                delCmd.ExecuteNonQuery();
+            }
+            else
+            {
+                using var idCmd = new SqliteCommand(
+                    "SELECT COALESCE(MAX(Id), 0) + 1 FROM RecurTrans;", conn);
                 nextId = (long)idCmd.ExecuteScalar()!;
             }
 
@@ -186,8 +271,9 @@ namespace FinanceApp.Dialogs
             {
                 using var cmd = new SqliteCommand(
                     "INSERT INTO RecurTrans (Id, Name, Amount, Memo, Account, Category, Frequency, NextDue, LastPosted, TrType) " +
-                    "VALUES (@id, @name, @amount, @memo, @account, @category, @frequency, @nextDue, NULL, 2);", conn);
+                    "VALUES (@id, @name, @amount, @memo, @account, @category, @frequency, @nextDue, @lastPosted, 2);", conn);
                 cmd.Parameters.AddWithValue("@id",        nextId);
+                cmd.Parameters.AddWithValue("@lastPosted", (object?)lastPosted ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@name",      name);
                 cmd.Parameters.AddWithValue("@amount",    (double)amount);
                 cmd.Parameters.AddWithValue("@memo",      memo);
@@ -215,5 +301,23 @@ namespace FinanceApp.Dialogs
             MessageBox.Show(msg, "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
 
         private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;
+
+        private void Delete_Click(object sender, RoutedEventArgs e)
+        {
+            if (_editId is not long editId) return;
+
+            var confirm = MessageBox.Show(
+                "Are you sure you want to delete this recurring transaction?",
+                "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+            if (confirm != MessageBoxResult.Yes) return;
+
+            using var conn = _db.OpenConnection();
+            using var cmd  = new SqliteCommand(
+                "DELETE FROM RecurTrans WHERE Id = @id;", conn);
+            cmd.Parameters.AddWithValue("@id", editId);
+            cmd.ExecuteNonQuery();
+
+            DialogResult = true;
+        }
     }
 }

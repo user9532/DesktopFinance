@@ -1,0 +1,131 @@
+<UserControl x:Class="FinanceApp.Views.InvestmentPerformanceView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DockPanel>
+
+        <Border DockPanel.Dock="Top"
+                Background="#F0F0F0"
+                BorderBrush="#CCCCCC"
+                BorderThickness="0,0,0,1"
+                Padding="6,5">
+            <StackPanel Orientation="Horizontal">
+                <Button Content="Export" Width="76" Click="Export_Click"/>
+            </StackPanel>
+        </Border>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="16,20,16,20">
+
+                <TextBlock Text="Investment Performance"
+                           FontSize="16" FontWeight="Bold"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,4"/>
+                <TextBlock x:Name="TxtAsOf"
+                           FontSize="13"
+                           HorizontalAlignment="Center"
+                           Margin="0,0,0,18"/>
+
+                <DataGrid x:Name="PerfGrid"
+                          AutoGenerateColumns="False"
+                          CanUserSortColumns="False"
+                          CanUserAddRows="False"
+                          CanUserDeleteRows="False"
+                          IsReadOnly="True"
+                          SelectionUnit="FullRow"
+                          GridLinesVisibility="Horizontal"
+                          AlternatingRowBackground="#FAFAFA"
+                          HeadersVisibility="Column">
+                    <DataGrid.Columns>
+
+                        <DataGridTextColumn Header="Portfolio" Binding="{Binding Portfolio}" Width="140">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Name of Security" Binding="{Binding Name}" Width="180">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Symbol" Binding="{Binding Symbol}" Width="70">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Qty" Binding="{Binding QuantityDisplay}" Width="90">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="Margin" Value="0,0,4,0"/>
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Price" Binding="{Binding PriceDisplay}" Width="80">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="Margin" Value="0,0,4,0"/>
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Current Value" Binding="{Binding CurrentValueDisplay}" Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="Margin" Value="0,0,4,0"/>
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Cost Basis" Binding="{Binding CostBasisDisplay}" Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="Margin" Value="0,0,4,0"/>
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="Gain/Loss" Binding="{Binding GainLossDisplay}" Width="110">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="Margin" Value="0,0,4,0"/>
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                        <DataGridTextColumn Header="% Gain/Loss" Binding="{Binding PctGainLossDisplay}" Width="100">
+                            <DataGridTextColumn.ElementStyle>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter Property="Margin" Value="0,0,4,0"/>
+                                    <Setter Property="FontWeight" Value="{Binding RowFontWeight}"/>
+                                </Style>
+                            </DataGridTextColumn.ElementStyle>
+                        </DataGridTextColumn>
+
+                    </DataGrid.Columns>
+                </DataGrid>
+
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</UserControl>

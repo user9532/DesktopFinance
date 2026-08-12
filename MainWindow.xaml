@@ -73,16 +73,17 @@
                 <Separator/>
                 <MenuItem Header="_Stock Split"          Click="StockSplit_Click"/>
             </MenuItem>
-            <MenuItem Header="_Recurring">
+            <!-- MenuItem Header="_Recurring">
                 <MenuItem Header="_Recurring Payment" Click="RecurringPayment_Click"/>
                 <MenuItem Header="_Recurring Receipt" Click="RecurringReceipt_Click"/>
                 <MenuItem Header="_View Recurring"    Click="ViewRecurring_Click"/>
-            </MenuItem>
+            </MenuItem -->
             <MenuItem Header="_Reports">
                 <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>
                 <MenuItem Header="_Budget vs Actual"     Click="BudgetActual_Click"/>
                 <MenuItem Header="_Net Worth Statement"  Click="NetWorthStatement_Click"/>
                 <MenuItem Header="_Cash Flow Statement"  Click="CashFlowStatement_Click"/>
+                <MenuItem Header="_Investment Performance" Click="InvestmentPerformance_Click"/>
                 <MenuItem Header="_Drilldown Category"   Click="DrilldownCategory_Click"/>
             </MenuItem>
             <MenuItem Header="_Help">

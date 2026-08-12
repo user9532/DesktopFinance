@@ -9,6 +9,7 @@
     <AssemblyName>Finance</AssemblyName>
     <RootNamespace>FinanceApp</RootNamespace>
     <ApplicationIcon>Assets\AppIcon.ico</ApplicationIcon>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

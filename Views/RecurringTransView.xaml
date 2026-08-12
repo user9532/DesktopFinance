@@ -50,9 +50,18 @@
                     <DataGridTemplateColumn Header="" Width="70" CanUserSort="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="View" Padding="6,2"
+                                <Button Content="Post" Padding="6,2"
                                         Tag="{Binding}"
                                         Click="ViewPaymentRow_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="" Width="70" CanUserSort="False">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Edit" Padding="6,2"
+                                        Tag="{Binding}"
+                                        Click="EditPaymentRow_Click"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
@@ -103,9 +112,18 @@
                     <DataGridTemplateColumn Header="" Width="70" CanUserSort="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="View" Padding="6,2"
+                                <Button Content="Post" Padding="6,2"
                                         Tag="{Binding}"
                                         Click="ViewReceiptRow_Click"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="" Width="70" CanUserSort="False">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Content="Edit" Padding="6,2"
+                                        Tag="{Binding}"
+                                        Click="EditReceiptRow_Click"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
