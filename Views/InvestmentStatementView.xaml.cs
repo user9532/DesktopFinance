@@ -161,6 +161,9 @@ namespace FinanceApp.Views
 
         private void SaveAll()
         {
+            TrGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+            TrGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
             var toSave = _allRows.Where(r => r.IsDirty || r.IsNew).ToList();
             if (!toSave.Any()) return;
 
@@ -184,6 +187,7 @@ namespace FinanceApp.Views
                 trnType = amount < 0 ? "CREDIT" : "DEBIT";
 
             string dbCategory = row.MatchedViaCategory ? _account : row.DisplayCategory;
+            string dbAccount  = row.MatchedViaCategory ? row.DisplayCategory : _account;
 
             if (row.IsNew)
             {
@@ -194,7 +198,7 @@ namespace FinanceApp.Views
                     VALUES
                         (@acct,@date,@chk,@name,@cat,@memo,@action,@sym,
                          @qty,@price,@comm,@amt,@trn);", conn);
-                cmd.Parameters.AddWithValue("@acct",  _account);
+                cmd.Parameters.AddWithValue("@acct",  dbAccount);
                 cmd.Parameters.AddWithValue("@date",  date);
                 cmd.Parameters.AddWithValue("@chk",   row.CheckNo ?? "");
                 cmd.Parameters.AddWithValue("@name",  row.Name ?? "");
@@ -213,10 +217,11 @@ namespace FinanceApp.Views
             {
                 using var cmd = new SqliteCommand(@"
                     UPDATE Transactions SET
-                        Date=@date, CheckNo=@chk, Name=@name, Category=@cat, Memo=@memo,
+                        Account=@acct, Date=@date, CheckNo=@chk, Name=@name, Category=@cat, Memo=@memo,
                         Action=@action, Symbol=@sym, Quantity=@qty, Price=@price,
                         Commission=@comm, Amount=@amt, TrnType=@trn
                     WHERE rowid=@rid;", conn);
+                cmd.Parameters.AddWithValue("@acct",  dbAccount);
                 cmd.Parameters.AddWithValue("@date",  date);
                 cmd.Parameters.AddWithValue("@chk",   row.CheckNo ?? "");
                 cmd.Parameters.AddWithValue("@name",  row.Name ?? "");

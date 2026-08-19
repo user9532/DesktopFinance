@@ -180,6 +180,9 @@ namespace FinanceApp.Views
 
         private void SaveAll()
         {
+            TrGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+            TrGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
             var toSave = _allRows.Where(r => r.IsDirty || r.IsNew).ToList();
             if (!toSave.Any()) return;
 
@@ -196,7 +199,6 @@ namespace FinanceApp.Views
         {
             var cleanMemo = CleanText(row.Memo);
             var cleanName = CleanText(row.Name);
-            var isNewRow  = row.IsNew;
             var date      = row.DateValue?.ToString("yyyy-MM-dd") ?? "";
 
             // Determine amount & TrnType from Payment/Deposit strings
@@ -211,9 +213,10 @@ namespace FinanceApp.Views
                 trnType = hasPayment ? "CREDIT" : "DEBIT";
 
             // For account-matched rows the DisplayCategory IS the category to store.
-            // For category-matched rows the Category column keeps the selected account;
-            // the Account column is stored as-is (we don't change other account's Account field).
+            // For category-matched rows, DisplayCategory shows/edits the OTHER account
+            // (the Account column); the Category column stays this account (_account).
             string dbCategory = row.MatchedViaCategory ? _account : row.DisplayCategory;
+            string dbAccount  = row.MatchedViaCategory ? row.DisplayCategory : _account;
 
             if (row.IsNew)
             {
@@ -222,10 +225,10 @@ namespace FinanceApp.Views
                         (Account, Date, CheckNo, Name, Category, Clear, Amount, Memo, FinancialId, TrnType)
                     VALUES
                         (@acct,@date,@chk,@name,@cat,@clr,@amt,@memo,@fid,@trn);", conn);
-                cmd.Parameters.AddWithValue("@acct", _account);
+                cmd.Parameters.AddWithValue("@acct", dbAccount);
                 cmd.Parameters.AddWithValue("@date", date);
                 cmd.Parameters.AddWithValue("@chk",  row.CheckNo ?? "");
-                cmd.Parameters.AddWithValue("@name", row.Name ?? "");
+                cmd.Parameters.AddWithValue("@name", cleanName);
                 cmd.Parameters.AddWithValue("@cat",  dbCategory ?? "");
                 cmd.Parameters.AddWithValue("@clr",  row.Clear ? 1 : 0);
                 cmd.Parameters.AddWithValue("@amt",  (double)amount);
@@ -238,12 +241,13 @@ namespace FinanceApp.Views
             {
                 using var cmd = new SqliteCommand(@"
                     UPDATE Transactions SET
-                        Date=@date, CheckNo=@chk, Name=@name, Category=@cat,
+                        Account=@acct, Date=@date, CheckNo=@chk, Name=@name, Category=@cat,
                         Clear=@clr, Amount=@amt, Memo=@memo, FinancialId=@fid, TrnType=@trn
                     WHERE rowid=@rid;", conn);
+                cmd.Parameters.AddWithValue("@acct", dbAccount);
                 cmd.Parameters.AddWithValue("@date", date);
                 cmd.Parameters.AddWithValue("@chk",  row.CheckNo ?? "");
-                cmd.Parameters.AddWithValue("@name", row.Name ?? "");
+                cmd.Parameters.AddWithValue("@name", cleanName);
                 cmd.Parameters.AddWithValue("@cat",  dbCategory ?? "");
                 cmd.Parameters.AddWithValue("@clr",  row.Clear ? 1 : 0);
                 cmd.Parameters.AddWithValue("@amt",  (double)amount);
@@ -254,19 +258,8 @@ namespace FinanceApp.Views
                 cmd.ExecuteNonQuery();
             }
 
-            // Update CatHistory keyed on Memo (matches QfxImporter's MEMO-based lookup)
+            // Update CatHistory keyed on Name (matches QfxImporter's NAME-based lookup)
             if (!row.MatchedViaCategory
-                && !string.IsNullOrWhiteSpace(cleanMemo)
-                && !string.IsNullOrWhiteSpace(row.DisplayCategory))
-            {
-                UpdateCatHistory(conn, cleanMemo, row.DisplayCategory, amount);
-            }
-
-            // For a manually-added row whose Name had no CatHistory match, save
-            // the entered Name/Category/Amount as a new CatHistory entry.
-            if (isNewRow
-                && !row.NameMatchedCatHistory
-                && !row.MatchedViaCategory
                 && !string.IsNullOrWhiteSpace(cleanName)
                 && !string.IsNullOrWhiteSpace(row.DisplayCategory))
             {
@@ -294,13 +287,12 @@ namespace FinanceApp.Views
                 ins.Parameters.AddWithValue("@a", (double)amount);
                 ins.ExecuteNonQuery();
             }
-            else
+            else if (existing != category)
             {
                 using var upd = new SqliteCommand(
-                    "UPDATE CatHistory SET Category=@c, Amount=@a WHERE Description=@d;", conn);
+                    "UPDATE CatHistory SET Category=@c WHERE Description=@d;", conn);
                 upd.Parameters.AddWithValue("@d", name);
                 upd.Parameters.AddWithValue("@c", category);
-                upd.Parameters.AddWithValue("@a", (double)amount);
                 upd.ExecuteNonQuery();
             }
         }
@@ -319,10 +311,24 @@ namespace FinanceApp.Views
             // When the Name column commits on a new row, look up CatHistory
             // and auto-fill Category and Payment/Deposit from the last known entry.
             if (e.Column == TrGrid.Columns[2]
-                && e.Row.DataContext is TransactionRowViewModel row
-                && row.IsNew)
+                && e.Row.DataContext is TransactionRowViewModel newRow
+                && newRow.IsNew)
             {
-                Dispatcher.BeginInvoke(new Action(() => AutoFillFromCatHistory(row)));
+                Dispatcher.BeginInvoke(new Action(() => AutoFillFromCatHistory(newRow)));
+            }
+
+            // When the Category combo commits, sync CatHistory using the row's Name.
+            if (e.Column == TrGrid.Columns[3]
+                && e.Row.DataContext is TransactionRowViewModel row
+                && !row.MatchedViaCategory)
+            {
+                var cleanName = CleanText(row.Name);
+                var category  = row.DisplayCategory;
+                if (!string.IsNullOrWhiteSpace(cleanName) && !string.IsNullOrWhiteSpace(category))
+                {
+                    using var conn = _db.OpenConnection();
+                    UpdateCatHistory(conn, cleanName, category, 0);
+                }
             }
 
             // Recalculate balance after any edit (Payment/Deposit may have changed)
@@ -331,7 +337,7 @@ namespace FinanceApp.Views
 
         private void AutoFillFromCatHistory(TransactionRowViewModel row)
         {
-            var name = row.Name?.Trim();
+            var name = CleanText(row.Name);
             if (string.IsNullOrEmpty(name)) return;
 
             using var conn = _db.OpenConnection();
@@ -401,6 +407,7 @@ namespace FinanceApp.Views
             _allRows.Remove(row);
             _view.Remove(row);
             RecalcBalance();
+            TrGrid.Items.Refresh();
         }
 
         private void SplitRow_Click(object sender, RoutedEventArgs e)

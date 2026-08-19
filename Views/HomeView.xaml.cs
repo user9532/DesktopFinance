@@ -45,20 +45,22 @@ namespace FinanceApp.Views
 
         private const double MaxBarWidth = 400;
 
+        private bool _loadingMonths;
+
         public HomeView(DatabaseManager db)
         {
             _db = db;
             InitializeComponent();
             LoadPendingTransactions();
             LoadAccountBalances();
-            LoadDashboard();
+            LoadDashboardMonths();
         }
 
         public void Refresh()
         {
             LoadPendingTransactions();
             LoadAccountBalances();
-            LoadDashboard();
+            LoadDashboardMonths();
         }
 
         // ── bank / credit card / investment / loan balances ─────────────────
@@ -277,24 +279,53 @@ namespace FinanceApp.Views
                 main.ActivateOrOpenRecurringPublic();
         }
   
-        // ── dashboard: budget vs actual expense, latest available month ────
+        // ── dashboard: budget vs actual expense, month picker ───────────────
 
-        private void LoadDashboard()
+        // Populates the month dropdown with all 12 months of the current year,
+        // selects the current month (or latest prior month with data if the
+        // current month is empty), and loads the chart for that selection.
+        private void LoadDashboardMonths()
         {
-            using var conn = _db.OpenConnection();
+            _loadingMonths = true;
 
-            // Current month if it has data; otherwise the latest previous month that does.
+            var currentMonthStart = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
+            var items = new List<ComboBoxItem>();
+            for (int i = 11; i >= 0; i--)
+            {
+                var monthStart = currentMonthStart.AddMonths(-i);
+                items.Add(new ComboBoxItem
+                {
+                    Content = monthStart.ToString("MMMM yyyy"),
+                    Tag     = monthStart.ToString("yyyy-MM")
+                });
+            }
+            CbDashboardMonth.ItemsSource = null;
+            CbDashboardMonth.ItemsSource = items;
+
+            using var conn = _db.OpenConnection();
             var currentMonthStr = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).ToString("yyyy-MM-dd");
-            string? latestMonth = HasDataForMonth(conn, currentMonthStr)
+            string? defaultMonth = HasDataForMonth(conn, currentMonthStr)
                 ? currentMonthStr.Substring(0, 7)
                 : LatestPriorMonthWithData(conn, currentMonthStr);
-            if (latestMonth == null)
-            {
-                TxtDashboardSubtitle.Text = "";
-                DashboardChart.ItemsSource = null;
-                TxtNoDashboardData.Visibility = Visibility.Visible;
-                return;
-            }
+            defaultMonth ??= currentMonthStr.Substring(0, 7);
+
+            _loadingMonths = false;
+
+            CbDashboardMonth.SelectedItem = items.FirstOrDefault(i => (string)i.Tag == defaultMonth)
+                                             ?? items[^1];
+            LoadDashboard(defaultMonth);
+        }
+
+        private void CbDashboardMonth_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_loadingMonths) return;
+            if (CbDashboardMonth.SelectedItem is ComboBoxItem item)
+                LoadDashboard((string)item.Tag);
+        }
+
+        private void LoadDashboard(string latestMonth)
+        {
+            using var conn = _db.OpenConnection();
 
             var monthStart = DateTime.Parse(latestMonth + "-01");
             var monthEnd   = monthStart.AddMonths(1).AddDays(-1);

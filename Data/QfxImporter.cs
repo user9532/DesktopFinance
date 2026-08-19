@@ -24,12 +24,14 @@ namespace FinanceApp.Data
 
         public QfxImporter(DatabaseManager db) => _db = db;
 
-        // ── ORG / FID ────────────────────────────────────────────────────
+        // ── ORG / FID / ACCTID ──────────────────────────────────────────────
 
-        public (string org, string fid) ReadOrgFid(string filePath)
+        public (string org, string fid, string acctIdLast4) ReadOrgFid(string filePath)
         {
             var content = File.ReadAllText(filePath);
-            return (GetTagValue(content, "ORG"), GetTagValue(content, "FID"));
+            var acctId  = GetTagValue(content, "ACCTID");
+            var last4   = acctId.Length > 4 ? acctId[^4..] : acctId;
+            return (GetTagValue(content, "ORG"), GetTagValue(content, "FID"), last4);
         }
 
         // ── AccountMap lookup / save ──────────────────────────────────────
@@ -93,11 +95,12 @@ namespace FinanceApp.Data
                 var trnType   = t.TrnAmt < 0 ? "CREDIT" : "DEBIT";
                 var absAmount = (double)Math.Abs(t.TrnAmt);
 
-                // Clean memo for storage
+                // Clean memo/name for storage
                 var cleanMemo = CleanText(t.Memo);
+                var cleanName = CleanText(t.Name);
 
-                // Look up category from CatHistory, keyed on Description (matches MEMO)
-                var category = LookupCatHistory(conn, cleanMemo);
+                // Look up category from CatHistory, keyed on Description (matches NAME)
+                var category = LookupCatHistory(conn, cleanName);
 
                 using var cmd = new SqliteCommand(@"
                     INSERT INTO Transactions
@@ -112,7 +115,7 @@ namespace FinanceApp.Data
                 cmd.Parameters.AddWithValue("@type",    t.TrnType);
                 cmd.Parameters.AddWithValue("@amt",     absAmount);
                 cmd.Parameters.AddWithValue("@fid",     t.FitId);
-                cmd.Parameters.AddWithValue("@name",    t.Name);
+                cmd.Parameters.AddWithValue("@name",    cleanName);
                 cmd.Parameters.AddWithValue("@memo",    cleanMemo);
                 cmd.Parameters.AddWithValue("@cat",     category);
                 cmd.Parameters.AddWithValue("@trntype", trnType);

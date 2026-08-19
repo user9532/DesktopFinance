@@ -127,4 +127,70 @@ $g.DrawLine($penAccent, 15, 18, 23, 18)
 Save-Icon $bmp "AddQuotes"
 $g.Dispose(); $bmp.Dispose()
 
+# 9. Income and Expenses — up/down arrows with bar
+$r = New-Canvas; $bmp, $g = $r
+$g.DrawLine($penAccent, 7, 3, 7, 13)
+$g.DrawLine($penAccent, 3, 7, 7, 3)
+$g.DrawLine($penAccent, 11, 7, 7, 3)
+$g.DrawLine($pen2, 17, 21, 17, 11)
+$g.DrawLine($pen2, 13, 17, 17, 21)
+$g.DrawLine($pen2, 21, 17, 17, 21)
+Save-Icon $bmp "IncomeExpenses"
+$g.Dispose(); $bmp.Dispose()
+
+# 10. Budget vs Actual — two bars side by side with divider
+$r = New-Canvas; $bmp, $g = $r
+$g.FillRectangle($brushInk, 4, 10, 5, 12)
+$g.FillRectangle($brushAccent, 11, 5, 5, 17)
+$g.DrawLine($pen2, 2, 22, 22, 22)
+Save-Icon $bmp "BudgetActual"
+$g.Dispose(); $bmp.Dispose()
+
+# 11. Net Worth Statement — scale/balance icon
+$r = New-Canvas; $bmp, $g = $r
+$g.DrawLine($pen2, 12, 3, 12, 20)
+$g.DrawLine($pen2, 4, 8, 20, 8)
+$g.DrawEllipse($pen2, 2, 8, 6, 6)
+$g.DrawEllipse($pen2, 16, 8, 6, 6)
+$g.DrawLine($penAccent, 6, 20, 18, 20)
+Save-Icon $bmp "NetWorthStatement"
+$g.Dispose(); $bmp.Dispose()
+
+# 12. Cash Flow Statement — wavy line with arrow
+$r = New-Canvas; $bmp, $g = $r
+$pts3 = @(
+  (New-Object System.Drawing.Point 2,16),
+  (New-Object System.Drawing.Point 7,10),
+  (New-Object System.Drawing.Point 11,15),
+  (New-Object System.Drawing.Point 16,6),
+  (New-Object System.Drawing.Point 21,11)
+)
+$g.DrawLines($pen2, $pts3)
+$g.DrawLine($penAccent, 21, 11, 21, 4)
+$g.DrawLine($penAccent, 16, 6, 21, 4)
+$g.DrawLine($penAccent, 23, 6, 21, 4)
+Save-Icon $bmp "CashFlowStatement"
+$g.Dispose(); $bmp.Dispose()
+
+# 13. Investment Performance — rising bars with trend line
+$r = New-Canvas; $bmp, $g = $r
+$g.FillRectangle($brushInk, 3, 16, 4, 6)
+$g.FillRectangle($brushInk, 10, 11, 4, 11)
+$g.FillRectangle($brushInk, 17, 5, 4, 17)
+$g.DrawLine($penAccent, 3, 15, 21, 3)
+$g.DrawLine($penAccent, 21, 3, 16, 3)
+$g.DrawLine($penAccent, 21, 3, 21, 8)
+Save-Icon $bmp "InvestmentPerformance"
+$g.Dispose(); $bmp.Dispose()
+
+# 14. Drilldown Category — funnel/magnifier into pie
+$r = New-Canvas; $bmp, $g = $r
+$g.DrawPie($pen2, 3, 3, 14, 14, 0, 90)
+$g.DrawPie($penAccent, 3, 3, 14, 14, 90, 130)
+$g.DrawPie($pen2, 3, 3, 14, 14, 220, 140)
+$g.DrawEllipse($pen2, 14, 14, 7, 7)
+$g.DrawLine($pen2, 19, 19, 23, 23)
+Save-Icon $bmp "DrilldownCategory"
+$g.Dispose(); $bmp.Dispose()
+
 Write-Output "Toolbar icons written to $outDir"

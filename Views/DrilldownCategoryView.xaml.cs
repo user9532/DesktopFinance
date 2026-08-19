@@ -13,13 +13,17 @@ namespace FinanceApp.Views
     public partial class DrilldownCategoryView : UserControl
     {
         private readonly string _category;
+        private readonly DateTime _startDate;
+        private readonly DateTime _endDate;
         private List<DrillRow> _rows = new();
 
-        public DrilldownCategoryView(DatabaseManager db, string category)
+        public DrilldownCategoryView(DatabaseManager db, string category, DateTime startDate, DateTime endDate)
         {
             InitializeComponent();
             _category     = category;
-            TbHeader.Text = $"Category: {category}";
+            _startDate    = startDate;
+            _endDate      = endDate;
+            TbHeader.Text = $"Category: {category}   ({startDate:MM/dd/yyyy} - {endDate:MM/dd/yyyy})";
             LoadData(db);
         }
 
@@ -31,9 +35,11 @@ namespace FinanceApp.Views
             using var cmd = new SqliteCommand(@"
                 SELECT Date, CheckNo, Account, Name, Clear, Amount, Memo, TrnType
                 FROM   Transactions
-                WHERE  Category = @cat
+                WHERE  Category = @cat AND Date >= @start AND Date <= @end
                 ORDER  BY Date ASC;", conn);
-            cmd.Parameters.AddWithValue("@cat", _category);
+            cmd.Parameters.AddWithValue("@cat",   _category);
+            cmd.Parameters.AddWithValue("@start", _startDate.ToString("yyyy-MM-dd"));
+            cmd.Parameters.AddWithValue("@end",   _endDate.ToString("yyyy-MM-dd"));
 
             decimal balance = 0m;
             using var r = cmd.ExecuteReader();

@@ -12,6 +12,42 @@
         <TextBlock Text="Select Category:" FontWeight="SemiBold" Margin="0,0,0,6"/>
         <ComboBox x:Name="CbCategory" Width="280" Margin="0,0,0,16"/>
 
+        <Grid Margin="0,0,0,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="16"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="8"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Start date -->
+            <TextBlock Grid.Row="0" Grid.Column="0"
+                       Text="Start date" FontWeight="SemiBold"
+                       VerticalAlignment="Top" Margin="0,4,0,0"/>
+            <DatePicker Grid.Row="0" Grid.Column="2"
+                        x:Name="DpStart"
+                        Width="160"
+                        SelectedDateChanged="DatePicker_SelectedDateChanged"/>
+
+            <!-- End date -->
+            <TextBlock Grid.Row="2" Grid.Column="0"
+                       Text="End date" FontWeight="SemiBold"
+                       VerticalAlignment="Top" Margin="0,4,0,0"/>
+            <DatePicker Grid.Row="2" Grid.Column="2"
+                        x:Name="DpEnd"
+                        Width="160"
+                        SelectedDateChanged="DatePicker_SelectedDateChanged"/>
+        </Grid>
+
+        <TextBlock x:Name="TbError"
+                   Foreground="Red" FontSize="11"
+                   Margin="0,0,0,8"
+                   Visibility="Collapsed"/>
+
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
             <Button Content="Cancel"   Width="80" IsCancel="True" Margin="0,0,8,0" Click="Cancel_Click"/>
             <Button x:Name="BtnContinue" Content="Continue" Width="80" IsDefault="True"

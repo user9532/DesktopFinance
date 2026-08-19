@@ -260,11 +260,22 @@
                     CornerRadius="4"
                     Padding="14">
                 <StackPanel>
-                    <TextBlock x:Name="TxtDashboardTitle"
-                               Text="Budget vs Actual Expense"
-                               FontSize="15" FontWeight="Bold"
-                               Foreground="#3B4470"
-                               Margin="0,0,0,4"/>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="TxtDashboardTitle"
+                                   Grid.Column="0"
+                                   Text="Budget vs Actual Expense"
+                                   FontSize="15" FontWeight="Bold"
+                                   Foreground="#3B4470"
+                                   VerticalAlignment="Center"/>
+                        <ComboBox x:Name="CbDashboardMonth"
+                                  Grid.Column="1"
+                                  Width="130"
+                                  SelectionChanged="CbDashboardMonth_SelectionChanged"/>
+                    </Grid>
                     <TextBlock x:Name="TxtDashboardSubtitle"
                                Foreground="#666666"
                                Margin="0,0,0,10"/>

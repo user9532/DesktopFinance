@@ -237,28 +237,10 @@ namespace FinanceApp
             }
         }
 
-        private void CreateBackup_Click(object sender, RoutedEventArgs e)
+        private void ConfigureBackup_Click(object sender, RoutedEventArgs e)
         {
-            var saveDlg = new SaveFileDialog
-            {
-                Title            = "Save Database Backup",
-                Filter           = "Finance Database (*.fdb)|*.fdb|All Files (*.*)|*.*",
-                FileName         = $"MyFinance_backup_{DateTime.Now:yyyyMMdd_HHmmss}.fdb",
-                DefaultExt       = ".fdb"
-            };
-            if (saveDlg.ShowDialog() != true) return;
-
-            try
-            {
-                File.Copy(_db.DbPath, saveDlg.FileName, overwrite: true);
-                MessageBox.Show($"Backup created successfully:\n{saveDlg.FileName}",
-                    "Backup Complete", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Backup failed:\n\n{ex.Message}",
-                    "Backup Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            var dlg = new Dialogs.ConfigureBackupDialog(_db) { Owner = this };
+            dlg.ShowDialog();
         }
 
         private void MainWindow_Closing(object sender, CancelEventArgs e)
@@ -298,23 +280,47 @@ namespace FinanceApp
                 .Where(v => v.HasUnsavedChanges)
                 .ToList();
 
-            if (!dirtyBank.Any() && !dirtyCc.Any() && !dirtyOther.Any() && !dirtyOtherLiability.Any() && !dirtyInvestment.Any()) return;
-
-            var result = MessageBox.Show(
-                "There are unsaved changes in one or more account statement tabs.\n\n" +
-                "Do you want to save before exiting?",
-                "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
-
-            if (result == MessageBoxResult.Yes)
+            if (dirtyBank.Any() || dirtyCc.Any() || dirtyOther.Any() || dirtyOtherLiability.Any() || dirtyInvestment.Any())
             {
-                foreach (var v in dirtyBank)            v.SaveChanges();
-                foreach (var v in dirtyCc)              v.SaveChanges();
-                foreach (var v in dirtyOther)           v.SaveChanges();
-                foreach (var v in dirtyOtherLiability)  v.SaveChanges();
-                foreach (var v in dirtyInvestment)      v.SaveChanges();
+                var result = MessageBox.Show(
+                    "There are unsaved changes in one or more account statement tabs.\n\n" +
+                    "Do you want to save before exiting?",
+                    "Unsaved Changes", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    foreach (var v in dirtyBank)            v.SaveChanges();
+                    foreach (var v in dirtyCc)              v.SaveChanges();
+                    foreach (var v in dirtyOther)           v.SaveChanges();
+                    foreach (var v in dirtyOtherLiability)  v.SaveChanges();
+                    foreach (var v in dirtyInvestment)      v.SaveChanges();
+                }
+                else if (result == MessageBoxResult.Cancel)
+                {
+                    e.Cancel = true;
+                    return;
+                }
             }
-            else if (result == MessageBoxResult.Cancel)
-                e.Cancel = true;
+
+            BackupOnCloseIfConfigured();
+        }
+
+        private void BackupOnCloseIfConfigured()
+        {
+            var (backupOnClose, backupFolder) = _db.GetBackupSettings();
+            if (!backupOnClose || string.IsNullOrWhiteSpace(backupFolder)) return;
+
+            try
+            {
+                Directory.CreateDirectory(backupFolder);
+                var fileName = $"MyFinance_backup_{DateTime.Now:yyyyMMdd_HHmmss}.fdb";
+                File.Copy(_db.DbPath, Path.Combine(backupFolder, fileName), overwrite: true);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Automatic backup failed:\n\n{ex.Message}",
+                    "Backup Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         // Saves any unsaved edits in open Account/Credit Card/Other Asset/Other
@@ -367,9 +373,9 @@ namespace FinanceApp
 
             try
             {
-                // Resolve ORG:FID → account name
-                var (org, fid) = importer.ReadOrgFid(filePath);
-                var orgFid     = $"{org}:{fid}";
+                // Resolve ORG:FID:ACCTID(last4) → account name
+                var (org, fid, acctIdLast4) = importer.ReadOrgFid(filePath);
+                var orgFid     = $"{org}:{fid}:{acctIdLast4}";
 
                 var accountName = importer.LookupAccountMap(orgFid);
 
@@ -564,7 +570,7 @@ namespace FinanceApp
             var dlg = new DrilldownCategoryDialog(_db) { Owner = this };
             if (dlg.ShowDialog() != true) return;
 
-            var view   = new DrilldownCategoryView(_db, dlg.SelectedCategory);
+            var view   = new DrilldownCategoryView(_db, dlg.SelectedCategory, dlg.StartDate, dlg.EndDate);
             var header = $"Drilldown: {dlg.SelectedCategory}";
             AddClosableTab(header, view);
         }
@@ -942,6 +948,25 @@ namespace FinanceApp
         private void ViewRecurring_Click(object sender, RoutedEventArgs e)
         {
             ActivateOrOpenRecurring();
+        }
+
+        private void AccountsAndCategories_Click(object sender, RoutedEventArgs e)
+        {
+            var tabHeader = "Accounts and Categories";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is AccountsAndCategoriesView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var view = new AccountsAndCategoriesView(_db);
+            AddClosableTab(tabHeader, view);
         }
 
         public void ActivateOrOpenRecurringPublic() => ActivateOrOpenRecurring();

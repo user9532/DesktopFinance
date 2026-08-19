@@ -136,10 +136,38 @@ namespace FinanceApp.Data
                     Price  REAL
                 );
 
-                CREATE UNIQUE INDEX IF NOT EXISTS ux_quotes_date_symbol ON Quotes (Date, Symbol);";
+                CREATE UNIQUE INDEX IF NOT EXISTS ux_quotes_date_symbol ON Quotes (Date, Symbol);
+
+                CREATE TABLE IF NOT EXISTS BackupSettings (
+                    BackupOnClose INTEGER NOT NULL,
+                    BackupFolder  TEXT
+                );";
 
             using var cmd = new SqliteCommand(sql, conn);
             cmd.ExecuteNonQuery();
+        }
+
+        public (bool BackupOnClose, string? BackupFolder) GetBackupSettings()
+        {
+            using var conn = OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT BackupOnClose, BackupFolder FROM BackupSettings LIMIT 1;", conn);
+            using var r = cmd.ExecuteReader();
+            if (r.Read())
+                return (r.GetInt64(0) != 0, r.IsDBNull(1) ? null : r.GetString(1));
+            return (false, null);
+        }
+
+        public void SaveBackupSettings(bool backupOnClose, string? backupFolder)
+        {
+            using var conn = OpenConnection();
+            using var delCmd = new SqliteCommand("DELETE FROM BackupSettings;", conn);
+            delCmd.ExecuteNonQuery();
+            using var insCmd = new SqliteCommand(
+                "INSERT INTO BackupSettings (BackupOnClose, BackupFolder) VALUES (@on, @folder);", conn);
+            insCmd.Parameters.AddWithValue("@on", backupOnClose ? 1 : 0);
+            insCmd.Parameters.AddWithValue("@folder", (object?)backupFolder ?? DBNull.Value);
+            insCmd.ExecuteNonQuery();
         }
 
         private static void SeedVersionRow(SqliteConnection conn)

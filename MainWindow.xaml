@@ -32,8 +32,8 @@
                 <MenuItem Header="_Import QFX Data" Click="ImportQfx_Click"/>
                 <MenuItem Header="_Export…" Click="ExportTransactions_Click"/>
                 <Separator/>
-                <MenuItem Header="_Create Backup"  Click="CreateBackup_Click"/>
                 <MenuItem Header="_Restore Backup" Click="RestoreBackup_Click"/>
+                <MenuItem Header="Configure _Backup" Click="ConfigureBackup_Click"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
@@ -73,11 +73,10 @@
                 <Separator/>
                 <MenuItem Header="_Stock Split"          Click="StockSplit_Click"/>
             </MenuItem>
-            <!-- MenuItem Header="_Recurring">
-                <MenuItem Header="_Recurring Payment" Click="RecurringPayment_Click"/>
-                <MenuItem Header="_Recurring Receipt" Click="RecurringReceipt_Click"/>
-                <MenuItem Header="_View Recurring"    Click="ViewRecurring_Click"/>
-            </MenuItem -->
+            <MenuItem Header="_View">
+                <MenuItem Header="_Recurring Transactions" Click="ViewRecurring_Click"/>
+                <MenuItem Header="_Accounts and Categories" Click="AccountsAndCategories_Click"/>
+            </MenuItem>
             <MenuItem Header="_Reports">
                 <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>
                 <MenuItem Header="_Budget vs Actual"     Click="BudgetActual_Click"/>
@@ -120,6 +119,25 @@
                 </Button>
                 <Button Click="AddQuotes_Click"     ToolTip="Add Quotes">
                     <Image Source="Assets/Toolbar/AddQuotes.png"     Width="24" Height="24"/>
+                </Button>
+                <Separator/>
+                <Button Click="IncomeExpenses_Click" ToolTip="Income and Expenses">
+                    <Image Source="Assets/Toolbar/IncomeExpenses.png" Width="24" Height="24"/>
+                </Button>
+                <Button Click="BudgetActual_Click"   ToolTip="Budget vs Actual">
+                    <Image Source="Assets/Toolbar/BudgetActual.png"   Width="24" Height="24"/>
+                </Button>
+                <Button Click="NetWorthStatement_Click" ToolTip="Net Worth Statement">
+                    <Image Source="Assets/Toolbar/NetWorthStatement.png" Width="24" Height="24"/>
+                </Button>
+                <Button Click="CashFlowStatement_Click" ToolTip="Cash Flow Statement">
+                    <Image Source="Assets/Toolbar/CashFlowStatement.png" Width="24" Height="24"/>
+                </Button>
+                <Button Click="InvestmentPerformance_Click" ToolTip="Investment Performance">
+                    <Image Source="Assets/Toolbar/InvestmentPerformance.png" Width="24" Height="24"/>
+                </Button>
+                <Button Click="DrilldownCategory_Click" ToolTip="Drilldown Category">
+                    <Image Source="Assets/Toolbar/DrilldownCategory.png" Width="24" Height="24"/>
                 </Button>
             </ToolBar>
         </ToolBarTray>

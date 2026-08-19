@@ -193,6 +193,30 @@ namespace FinanceApp.Dialogs
             DialogResult = true;
         }
 
+        private void Skip_Click(object sender, RoutedEventArgs e)
+        {
+            if (DpNextDue.SelectedDate is null)
+            {
+                MessageBox.Show("Next Due Date is required.", "Validation",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var nextDueDate = DpNextDue.SelectedDate.Value;
+            var newNextDue  = AdvanceDate(nextDueDate, _frequency).ToString("yyyy-MM-dd");
+
+            using var conn = _db.OpenConnection();
+            using var upd = new SqliteCommand(@"
+                UPDATE RecurTrans
+                SET    NextDue = @next
+                WHERE  Id = @id;", conn);
+            upd.Parameters.AddWithValue("@next", newNextDue);
+            upd.Parameters.AddWithValue("@id",   _id);
+            upd.ExecuteNonQuery();
+
+            DialogResult = true;
+        }
+
         private static DateTime AdvanceDate(DateTime date, int frequency) => frequency switch
         {
             1   => date.AddDays(1),

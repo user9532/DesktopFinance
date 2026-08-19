@@ -179,6 +179,9 @@ namespace FinanceApp.Views
 
         private void SaveAll()
         {
+            TrGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+            TrGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
             var toSave = _allRows.Where(r => r.IsDirty || r.IsNew).ToList();
             if (!toSave.Any()) return;
 
@@ -193,6 +196,7 @@ namespace FinanceApp.Views
         private void SaveRow(SqliteConnection conn, TransactionRowViewModel row)
         {
             var cleanMemo = CleanText(row.Memo);
+            var cleanName = CleanText(row.Name);
             var date      = row.DateValue?.ToString("yyyy-MM-dd") ?? "";
 
             // Payment field = Debit (DEBIT), Deposit field = Credit (CREDIT)
@@ -207,6 +211,7 @@ namespace FinanceApp.Views
                 trnType = hasDebit ? "DEBIT" : "CREDIT";
 
             string dbCategory = row.MatchedViaCategory ? _account : row.DisplayCategory;
+            string dbAccount  = row.MatchedViaCategory ? row.DisplayCategory : _account;
 
             if (row.IsNew)
             {
@@ -215,9 +220,9 @@ namespace FinanceApp.Views
                         (Account, Date, Name, Category, Clear, Amount, Memo, FinancialId, TrnType)
                     VALUES
                         (@acct,@date,@name,@cat,@clr,@amt,@memo,@fid,@trn);", conn);
-                cmd.Parameters.AddWithValue("@acct", _account);
+                cmd.Parameters.AddWithValue("@acct", dbAccount);
                 cmd.Parameters.AddWithValue("@date", date);
-                cmd.Parameters.AddWithValue("@name", row.Name ?? "");
+                cmd.Parameters.AddWithValue("@name", cleanName);
                 cmd.Parameters.AddWithValue("@cat",  dbCategory ?? "");
                 cmd.Parameters.AddWithValue("@clr",  row.Clear ? 1 : 0);
                 cmd.Parameters.AddWithValue("@amt",  (double)amount);
@@ -230,11 +235,12 @@ namespace FinanceApp.Views
             {
                 using var cmd = new SqliteCommand(@"
                     UPDATE Transactions SET
-                        Date=@date, Name=@name, Category=@cat,
+                        Account=@acct, Date=@date, Name=@name, Category=@cat,
                         Clear=@clr, Amount=@amt, Memo=@memo, FinancialId=@fid, TrnType=@trn
                     WHERE rowid=@rid;", conn);
+                cmd.Parameters.AddWithValue("@acct", dbAccount);
                 cmd.Parameters.AddWithValue("@date", date);
-                cmd.Parameters.AddWithValue("@name", row.Name ?? "");
+                cmd.Parameters.AddWithValue("@name", cleanName);
                 cmd.Parameters.AddWithValue("@cat",  dbCategory ?? "");
                 cmd.Parameters.AddWithValue("@clr",  row.Clear ? 1 : 0);
                 cmd.Parameters.AddWithValue("@amt",  (double)amount);
@@ -245,12 +251,12 @@ namespace FinanceApp.Views
                 cmd.ExecuteNonQuery();
             }
 
-            // Update CatHistory keyed on Memo for account-matched rows
+            // Update CatHistory keyed on Name for account-matched rows
             if (!row.MatchedViaCategory
-                && !string.IsNullOrWhiteSpace(cleanMemo)
+                && !string.IsNullOrWhiteSpace(cleanName)
                 && !string.IsNullOrWhiteSpace(row.DisplayCategory))
             {
-                UpdateCatHistory(conn, cleanMemo, row.DisplayCategory);
+                UpdateCatHistory(conn, cleanName, row.DisplayCategory);
             }
 
             row.OriginalCategory = row.DisplayCategory;
@@ -294,17 +300,17 @@ namespace FinanceApp.Views
 
             _hasChanges = true;
 
-            // When the Category combo commits, sync CatHistory using the row's Memo.
+            // When the Category combo commits, sync CatHistory using the row's Name.
             if (e.Column == TrGrid.Columns[2]
                 && e.Row.DataContext is TransactionRowViewModel row
                 && !row.MatchedViaCategory)
             {
-                var cleanMemo = CleanText(row.Memo);
+                var cleanName = CleanText(row.Name);
                 var category  = row.DisplayCategory;
-                if (!string.IsNullOrWhiteSpace(cleanMemo) && !string.IsNullOrWhiteSpace(category))
+                if (!string.IsNullOrWhiteSpace(cleanName) && !string.IsNullOrWhiteSpace(category))
                 {
                     using var conn = _db.OpenConnection();
-                    UpdateCatHistory(conn, cleanMemo, category);
+                    UpdateCatHistory(conn, cleanName, category);
                 }
             }
 
