@@ -14,7 +14,7 @@
                 Padding="6,5">
             <DockPanel>
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
-                    <Button Content="Add Row" Width="76" Margin="0,0,6,0" Click="AddRow_Click"/>
+                    <Button Content="Add Row" Width="88" Margin="0,0,6,0" Style="{StaticResource SecondaryButtonStyle}" Click="AddRow_Click"/>
                     <Button Content="Save"    Width="76" Click="Save_Click"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">

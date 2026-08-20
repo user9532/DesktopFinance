@@ -6,7 +6,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         ShowInTaskbar="False">
-    <StackPanel Margin="24,18,22,12">
+    <StackPanel Margin="24,18,22,7">
 
         <TextBlock Text="Select account type:"
                    FontWeight="SemiBold"

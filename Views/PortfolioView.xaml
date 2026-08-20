@@ -11,7 +11,7 @@
                 BorderThickness="0,0,0,1"
                 Padding="6,5">
             <StackPanel Orientation="Horizontal">
-                <Button Content="Investment Account" Width="130" Click="InvestmentAccount_Click"/>
+                <Button Content="Investment Account" Width="138" Click="InvestmentAccount_Click"/>
             </StackPanel>
         </Border>
 

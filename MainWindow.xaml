@@ -33,7 +33,9 @@
                 <MenuItem Header="_Export…" Click="ExportTransactions_Click"/>
                 <Separator/>
                 <MenuItem Header="_Restore Backup" Click="RestoreBackup_Click"/>
-                <MenuItem Header="Configure _Backup" Click="ConfigureBackup_Click"/>
+                <MenuItem Header="_Backup" Click="ConfigureBackup_Click"/>
+                <Separator/>
+                <MenuItem Header="_New Database" Click="NewDatabase_Click"/>
                 <Separator/>
                 <MenuItem Header="E_xit" Click="Exit_Click"/>
             </MenuItem>
@@ -155,33 +157,16 @@
         <!-- Main content area -->
         <Grid>
             <Grid.ColumnDefinitions>
-                <!-- Fixed column for the always-visible toggle button -->
-                <ColumnDefinition Width="22"/>
                 <!-- Collapsible left pane; MinWidth prevents accidental splitter collapse -->
                 <ColumnDefinition x:Name="LeftColumn" Width="200" MinWidth="30"/>
-                <!-- GridSplitter -->
-                <ColumnDefinition Width="4"/>
+                <!-- GridSplitter; also hosts the toggle button -->
+                <ColumnDefinition Width="18"/>
                 <!-- Right pane -->
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <!-- Toggle button: always visible, outside the collapsible column -->
-            <Button Grid.Column="0"
-                    x:Name="ToggleBtn"
-                    Content="&#9664;"
-                    Click="ToggleLeftPane_Click"
-                    VerticalAlignment="Top"
-                    Margin="2,12,2,0"
-                    Height="26"
-                    FontSize="9"
-                    Background="#888888"
-                    Foreground="White"
-                    BorderThickness="0"
-                    Cursor="Hand"
-                    ToolTip="Collapse / expand the navigation pane"/>
-
             <!-- Left pane -->
-            <Border Grid.Column="1"
+            <Border Grid.Column="0"
                     Background="#F5F5F5"
                     BorderBrush="#CCCCCC"
                     BorderThickness="0,0,0,0"
@@ -205,14 +190,33 @@
             </Border>
 
             <!-- GridSplitter -->
-            <GridSplitter Grid.Column="2"
+            <GridSplitter Grid.Column="1"
                           HorizontalAlignment="Stretch"
                           VerticalAlignment="Stretch"
                           Background="#CCCCCC"
                           ResizeBehavior="PreviousAndNext"/>
 
+            <!-- Toggle button: sits on top of the splitter, between the two panes -->
+            <Button Grid.Column="1"
+                    x:Name="ToggleBtn"
+                    Content="&#9664;"
+                    Click="ToggleLeftPane_Click"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Top"
+                    Margin="0,12,0,0"
+                    Width="18"
+                    Height="26"
+                    Padding="0"
+                    FontSize="9"
+                    Panel.ZIndex="1"
+                    Background="#888888"
+                    Foreground="White"
+                    BorderThickness="0"
+                    Cursor="Hand"
+                    ToolTip="Collapse / expand the navigation pane"/>
+
             <!-- Right pane: TabControl -->
-            <TabControl Grid.Column="3"
+            <TabControl Grid.Column="2"
                         x:Name="MainTabControl"
                         Background="White"
                         SelectionChanged="MainTabControl_SelectionChanged">

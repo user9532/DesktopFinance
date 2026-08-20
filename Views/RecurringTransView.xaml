@@ -59,7 +59,8 @@
                     <DataGridTemplateColumn Header="" Width="70" CanUserSort="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Edit" Padding="6,2"
+                                <Button Content="Edit" Padding="6,2" Margin="6,0,0,0"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Tag="{Binding}"
                                         Click="EditPaymentRow_Click"/>
                             </DataTemplate>
@@ -121,7 +122,8 @@
                     <DataGridTemplateColumn Header="" Width="70" CanUserSort="False">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
-                                <Button Content="Edit" Padding="6,2"
+                                <Button Content="Edit" Padding="6,2" Margin="6,0,0,0"
+                                        Style="{StaticResource SecondaryButtonStyle}"
                                         Tag="{Binding}"
                                         Click="EditReceiptRow_Click"/>
                             </DataTemplate>

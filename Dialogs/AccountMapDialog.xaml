@@ -1,7 +1,7 @@
 <Window x:Class="FinanceApp.Dialogs.AccountMapDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Map Financial Institution"
+        Title="Select Your Account"
         Height="210" Width="420"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -20,7 +20,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" TextWrapping="Wrap"
-                   Text="The following financial institution was not found in the account map. Please select the account it corresponds to:"/>
+                   Text="The following financial institution was not found in the account list. Please select the account it corresponds to:"/>
 
         <TextBlock Grid.Row="2" x:Name="LblKey"
                    FontWeight="SemiBold" FontStyle="Italic"/>

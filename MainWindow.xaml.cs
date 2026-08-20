@@ -237,6 +237,48 @@ namespace FinanceApp
             }
         }
 
+        private void NewDatabase_Click(object sender, RoutedEventArgs e)
+        {
+            var confirmDlg = new Dialogs.NewDatabaseDialog { Owner = this };
+            if (confirmDlg.ShowDialog() != true) return;
+
+            var chooseDlg = new Dialogs.RestoreOrNewDialog { Owner = this };
+            if (chooseDlg.ShowDialog() != true) return;
+
+            try
+            {
+                // Close all statement tabs without prompting for saves.
+                var tabs = MainTabControl.Items.OfType<TabItem>()
+                    .Where(t => t.Content is AccountStatementView)
+                    .ToList();
+                foreach (var tab in tabs)
+                    MainTabControl.Items.Remove(tab);
+
+                // Release SQLite connections held by the connection pool.
+                SqliteConnection.ClearAllPools();
+
+                if (!string.IsNullOrEmpty(chooseDlg.BackupSourcePath))
+                {
+                    File.Copy(chooseDlg.BackupSourcePath, _db.DbPath, overwrite: true);
+                }
+                else
+                {
+                    File.Delete(_db.DbPath);
+                }
+
+                _db.InitializeDatabase();
+                RefreshNavTree();
+
+                MessageBox.Show("New database created successfully.",
+                    "New Database", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to create new database:\n\n{ex.Message}",
+                    "New Database Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void ConfigureBackup_Click(object sender, RoutedEventArgs e)
         {
             var dlg = new Dialogs.ConfigureBackupDialog(_db) { Owner = this };
