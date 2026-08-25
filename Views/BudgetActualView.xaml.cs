@@ -155,20 +155,20 @@ namespace FinanceApp.Views
 
                 sb.AppendLine("Income");
                 foreach (var l in _incomeLines)
-                    sb.AppendLine($"{CsvEscape(l.Name)},{l.Budget:N2},{l.Actual:N2},{l.Variance:N2}");
-                sb.AppendLine($"Total Income,{_incomeBudget:N2},{_incomeActual:N2},{(_incomeBudget - _incomeActual):N2}");
+                    sb.AppendLine($"{CsvEscape(l.Name)},{l.Budget:F2},{l.Actual:F2},{l.Variance:F2}");
+                sb.AppendLine($"Total Income,{_incomeBudget:F2},{_incomeActual:F2},{(_incomeBudget - _incomeActual):F2}");
                 sb.AppendLine();
 
                 sb.AppendLine("Expenses");
                 foreach (var l in _expenseLines)
-                    sb.AppendLine($"{CsvEscape(l.Name)},{l.Budget:N2},{l.Actual:N2},{l.Variance:N2}");
-                sb.AppendLine($"Total Expenses,{_expenseBudget:N2},{_expenseActual:N2},{(_expenseBudget - _expenseActual):N2}");
+                    sb.AppendLine($"{CsvEscape(l.Name)},{l.Budget:F2},{l.Actual:F2},{l.Variance:F2}");
+                sb.AppendLine($"Total Expenses,{_expenseBudget:F2},{_expenseActual:F2},{(_expenseBudget - _expenseActual):F2}");
                 sb.AppendLine();
 
                 sb.AppendLine($"Excess income over expenses," +
-                              $"{(_incomeBudget - _expenseBudget):N2}," +
-                              $"{(_incomeActual - _expenseActual):N2}," +
-                              $"{((_incomeBudget - _expenseBudget) - (_incomeActual - _expenseActual)):N2}");
+                              $"{(_incomeBudget - _expenseBudget):F2}," +
+                              $"{(_incomeActual - _expenseActual):F2}," +
+                              $"{((_incomeBudget - _expenseBudget) - (_incomeActual - _expenseActual)):F2}");
 
                 File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
                 MessageBox.Show($"Report exported to:\n{dlg.FileName}",

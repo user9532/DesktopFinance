@@ -90,15 +90,18 @@ namespace FinanceApp.Views
                 sb.AppendLine("Date,Check No,Account,Name,Clear,Debit,Credit,Balance,Memo");
                 foreach (var row in _rows)
                 {
+                    var debitStr  = row.Debit  != 0 ? row.Debit.ToString("F2")  : "";
+                    var creditStr = row.Credit != 0 ? row.Credit.ToString("F2") : "";
+
                     sb.AppendLine(
                         $"{row.DateDisplay}," +
                         $"{CsvEscape(row.CheckNo)}," +
                         $"{CsvEscape(row.Account)}," +
                         $"{CsvEscape(row.Name)}," +
                         $"{(row.Clear ? "Y" : "")}," +
-                        $"{row.DebitDisplay}," +
-                        $"{row.CreditDisplay}," +
-                        $"{row.BalanceDisplay}," +
+                        $"{debitStr}," +
+                        $"{creditStr}," +
+                        $"{row.Balance.ToString("F2")}," +
                         $"{CsvEscape(row.Memo)}");
                 }
                 File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);

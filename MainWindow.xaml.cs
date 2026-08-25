@@ -268,6 +268,7 @@ namespace FinanceApp
 
                 _db.InitializeDatabase();
                 RefreshNavTree();
+                _homeView.Refresh();
 
                 MessageBox.Show("New database created successfully.",
                     "New Database", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -666,16 +667,9 @@ namespace FinanceApp
             if (selectDlg.ShowDialog() != true) return;
 
             var account = selectDlg.SelectedAccount;
+            var inTransactions = AccountInTransactions(account);
 
-            if (AccountInTransactions(account))
-            {
-                MessageBox.Show(
-                    "The selected account is already assigned to transactions. Name cannot be changed.",
-                    "Cannot Edit", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            if (new EditAccountDialog(_db, account) { Owner = this }.ShowDialog() == true)
+            if (new EditAccountDialog(_db, account, inTransactions) { Owner = this }.ShowDialog() == true)
             {
                 RefreshAllStatementCategories();
                 RefreshNavTree();
@@ -705,16 +699,9 @@ namespace FinanceApp
             if (selectDlg.ShowDialog() != true) return;
 
             var category = selectDlg.SelectedCategory;
+            var inTransactions = AccountInTransactions(category);
 
-            if (AccountInTransactions(category))
-            {
-                MessageBox.Show(
-                    "The selected category is already assigned to transactions. Name cannot be changed.",
-                    "Cannot Edit", MessageBoxButton.OK, MessageBoxImage.Information);
-                return;
-            }
-
-            if (new EditCategoryDialog(_db, category) { Owner = this }.ShowDialog() == true)
+            if (new EditCategoryDialog(_db, category, inTransactions) { Owner = this }.ShowDialog() == true)
                 RefreshAllStatementCategories();
         }
 
@@ -1011,6 +998,25 @@ namespace FinanceApp
             AddClosableTab(tabHeader, view);
         }
 
+        private void Securities_Click(object sender, RoutedEventArgs e)
+        {
+            var tabHeader = "Securities";
+
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is SecuritiesView existing
+                    && GetTabHeaderText(item) == tabHeader)
+                {
+                    existing.Refresh();
+                    MainTabControl.SelectedItem = item;
+                    return;
+                }
+            }
+
+            var secView = new SecuritiesView(_db);
+            AddClosableTab(tabHeader, secView);
+        }
+
         public void ActivateOrOpenRecurringPublic() => ActivateOrOpenRecurring();
 
         public void RefreshHome() => _homeView.Refresh();
@@ -1069,6 +1075,19 @@ namespace FinanceApp
                     liv.Refresh();
             }
             _homeView.Refresh();
+        }
+
+        // Refreshes an open Bank Statement tab for the given account.
+        // Used after a recurring payment/receipt is posted, since posting inserts
+        // directly into the Transactions table and the statement tab (if open)
+        // would otherwise keep showing stale data until manually reopened.
+        public void RefreshBankStatementTab(string account)
+        {
+            foreach (var item in MainTabControl.Items.OfType<TabItem>())
+            {
+                if (item.Content is AccountStatementView asv && asv.Account == account)
+                    asv.Refresh();
+            }
         }
 
         public void ActivateOrOpenLoanInterest(string account)

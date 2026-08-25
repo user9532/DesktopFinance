@@ -21,6 +21,8 @@ namespace FinanceApp.Views
         private readonly DatabaseManager _db;
         private readonly string _account;
 
+        public string Account => _account;
+
         private readonly List<TransactionRowViewModel> _allRows = new();
         private ObservableCollection<TransactionRowViewModel> _view = new();
 
@@ -371,34 +373,59 @@ namespace FinanceApp.Views
 
         // ── right-click context menu ──────────────────────────────────────
 
+        // Preserves an existing multi-selection when right-clicking a row that's
+        // already part of it (standard Windows Explorer behavior).
         private void TrGrid_PreviewMouseRightButtonDown(object sender, MouseButtonEventArgs e)
         {
             var row = FindParent<DataGridRow>(e.OriginalSource as DependencyObject);
-            if (row?.DataContext is TransactionRowViewModel vm)
+            if (row?.DataContext is TransactionRowViewModel vm && !TrGrid.SelectedItems.Contains(vm))
                 TrGrid.SelectedItem = vm;
+        }
+
+        // Disables Split when more than one row is selected.
+        private void TrGridContextMenu_Opened(object sender, RoutedEventArgs e)
+        {
+            MiSplit.IsEnabled = TrGrid.SelectedItems.Count <= 1;
         }
 
         private void DeleteRow_Click(object sender, RoutedEventArgs e)
         {
-            if (TrGrid.SelectedItem is not TransactionRowViewModel row) return;
+            var rows = TrGrid.SelectedItems.Cast<TransactionRowViewModel>().ToList();
+            if (rows.Count == 0) return;
 
             var confirm = MessageBox.Show(
-                "Are you sure you want to delete this transaction?",
+                rows.Count == 1
+                    ? "Are you sure you want to delete this transaction?"
+                    : $"Are you sure you want to delete these {rows.Count} transactions?",
                 "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning);
             if (confirm != MessageBoxResult.Yes) return;
 
-            if (!row.IsNew)
+            using var conn = _db.OpenConnection();
+            foreach (var row in rows)
             {
-                using var conn = _db.OpenConnection();
-                using var cmd = new SqliteCommand(
-                    "DELETE FROM Transactions WHERE rowid = @id;", conn);
-                cmd.Parameters.AddWithValue("@id", row.RowId);
-                cmd.ExecuteNonQuery();
+                if (!row.IsNew)
+                {
+                    using var cmd = new SqliteCommand(
+                        "DELETE FROM Transactions WHERE rowid = @id;", conn);
+                    cmd.Parameters.AddWithValue("@id", row.RowId);
+                    cmd.ExecuteNonQuery();
+                }
+
+                _allRows.Remove(row);
+                _view.Remove(row);
             }
 
-            _allRows.Remove(row);
-            _view.Remove(row);
             RecalcBalance();
+        }
+
+        private void ToggleClear_Click(object sender, RoutedEventArgs e)
+        {
+            var rows = TrGrid.SelectedItems.Cast<TransactionRowViewModel>().ToList();
+            if (rows.Count == 0) return;
+
+            bool newValue = !rows[0].Clear;
+            foreach (var row in rows)
+                row.Clear = newValue;
         }
 
         private void SplitRow_Click(object sender, RoutedEventArgs e)

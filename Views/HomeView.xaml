@@ -7,8 +7,8 @@
         <StackPanel Margin="16">
 
             <!-- ── Pending Transactions panel ─────────────────────────────── -->
-            <Border Background="#FDF6EC"
-                    BorderBrush="#E8D5B5"
+            <Border Background="#EAF5F5"
+                    BorderBrush="#B8DEDE"
                     BorderThickness="1"
                     CornerRadius="4"
                     Padding="14"
@@ -21,7 +21,7 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBlock Grid.Column="0" Text="Pending Transactions (overdue and due in the next 30 days)"
-                                   FontSize="15" FontWeight="Bold" Foreground="#8A5A00" VerticalAlignment="Center"/>
+                                   FontSize="15" FontWeight="Bold" Foreground="#1F6E6E" VerticalAlignment="Center"/>
                         <Button Grid.Column="1" Content="View" Padding="10,3"
                                 Click="ViewRecurring_Click"/>
                     </Grid>

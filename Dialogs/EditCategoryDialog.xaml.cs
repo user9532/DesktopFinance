@@ -8,16 +8,22 @@ namespace FinanceApp.Dialogs
     {
         private readonly DatabaseManager _db;
         private readonly string _originalName;
+        private readonly bool _inTransactions;
 
-        public EditCategoryDialog(DatabaseManager db, string categoryName)
+        public EditCategoryDialog(DatabaseManager db, string categoryName, bool inTransactions)
         {
             InitializeComponent();
-            _db           = db;
-            _originalName = categoryName;
-            TxtName.Text  = categoryName;
-            TxtGroup.Text = LoadAccountGroup(categoryName);
+            _db             = db;
+            _originalName   = categoryName;
+            _inTransactions = inTransactions;
+            TxtName.Text    = categoryName;
+            TxtGroup.Text   = LoadAccountGroup(categoryName);
             TxtName.SelectAll();
             TxtName.Focus();
+
+            // Deleting would leave transactions/history referencing a non-existent
+            // category, so only offer it when the category isn't in use anywhere.
+            BtnDelete.Visibility = inTransactions ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private string LoadAccountGroup(string categoryName)
@@ -56,11 +62,30 @@ namespace FinanceApp.Dialogs
             }
 
             using var conn = _db.OpenConnection();
-            using var cmd = new SqliteCommand(
-                "UPDATE AccountChart SET AccountName = @new WHERE AccountName = @old;", conn);
-            cmd.Parameters.AddWithValue("@new", newName);
-            cmd.Parameters.AddWithValue("@old", _originalName);
-            cmd.ExecuteNonQuery();
+            using var tx   = conn.BeginTransaction();
+
+            void Rename(string table, string column)
+            {
+                using var cmd = new SqliteCommand(
+                    $"UPDATE {table} SET {column} = @new WHERE {column} = @old;", conn, tx);
+                cmd.Parameters.AddWithValue("@new", newName);
+                cmd.Parameters.AddWithValue("@old", _originalName);
+                cmd.ExecuteNonQuery();
+            }
+
+            Rename("Transactions", "Account");
+            Rename("Transactions", "Category");
+            Rename("CatHistory",   "Category");
+            Rename("RecurTrans",   "Account");
+            Rename("RecurTrans",   "Category");
+            Rename("Budget",       "Category");
+            Rename("AccountChart", "AccountName");
+
+            tx.Commit();
+
+            MessageBox.Show(
+                $"Category '{_originalName}' was renamed to '{newName}' and all related records were updated successfully.",
+                "Category Updated", MessageBoxButton.OK, MessageBoxImage.Information);
 
             DialogResult = true;
         }

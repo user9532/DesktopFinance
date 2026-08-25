@@ -128,17 +128,17 @@ namespace FinanceApp.Views
 
                 sb.AppendLine("Income");
                 foreach (var l in _incomeLines)
-                    sb.AppendLine($"{CsvEscape(l.Name)},{l.Amount:N2}");
-                sb.AppendLine($"Total Income,{_totalIncome:N2}");
+                    sb.AppendLine($"{CsvEscape(l.Name)},{l.Amount:F2}");
+                sb.AppendLine($"Total Income,{_totalIncome:F2}");
                 sb.AppendLine();
 
                 sb.AppendLine("Expenses");
                 foreach (var l in _expenseLines)
-                    sb.AppendLine($"{CsvEscape(l.Name)},{l.Amount:N2}");
-                sb.AppendLine($"Total Expenses,{_totalExpenses:N2}");
+                    sb.AppendLine($"{CsvEscape(l.Name)},{l.Amount:F2}");
+                sb.AppendLine($"Total Expenses,{_totalExpenses:F2}");
                 sb.AppendLine();
 
-                sb.AppendLine($"Excess income over expenses,{(_totalIncome - _totalExpenses):N2}");
+                sb.AppendLine($"Excess income over expenses,{(_totalIncome - _totalExpenses):F2}");
 
                 File.WriteAllText(dlg.FileName, sb.ToString(), Encoding.UTF8);
 

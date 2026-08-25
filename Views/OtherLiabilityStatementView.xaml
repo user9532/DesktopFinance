@@ -44,7 +44,8 @@
 
             <DataGrid.ContextMenu>
                 <ContextMenu>
-                    <MenuItem Header="Delete…" Click="DeleteRow_Click"/>
+                    <MenuItem Header="Delete…"        Click="DeleteRow_Click"/>
+                    <MenuItem Header="Check/Uncheck"  Click="ToggleClear_Click"/>
                 </ContextMenu>
             </DataGrid.ContextMenu>
 

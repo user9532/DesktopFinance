@@ -131,6 +131,7 @@ namespace FinanceApp.Dialogs
             if (days < 0) days = 0;
 
             double interest  = _currBalance * (_interestRate / 100.0) * (days / 365.0);
+            interest         = Math.Round(interest, 2, MidpointRounding.AwayFromZero);
             double principal = _pmt - interest;
 
             TxtInterest.Text  = interest.ToString("N2");

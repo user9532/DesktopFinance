@@ -23,6 +23,9 @@ namespace FinanceApp.Views
 
         public string AmountDisplay => IsSplit ? "SPLIT" : Amount.ToString("N2");
 
+        // Loan payments (TrType 3) are edited via the loan flow, not this dialog.
+        public bool IsEditable => TrType != 3;
+
         public string FrequencyLabel => Frequency switch
         {
             1   => "Daily",
@@ -143,7 +146,11 @@ namespace FinanceApp.Views
                 if (detail.ShowDialog() == true)
                 {
                     LoadData();
-                    (Window.GetWindow(this) as MainWindow)?.RefreshHome();
+                    if (Window.GetWindow(this) is MainWindow main)
+                    {
+                        main.RefreshHome();
+                        main.RefreshBankStatementTab(row.Account);
+                    }
                 }
             }
         }
@@ -157,7 +164,11 @@ namespace FinanceApp.Views
                 if (detail.ShowDialog() == true)
                 {
                     LoadData();
-                    (Window.GetWindow(this) as MainWindow)?.RefreshHome();
+                    if (Window.GetWindow(this) is MainWindow main)
+                    {
+                        main.RefreshHome();
+                        main.RefreshBankStatementTab(row.Account);
+                    }
                 }
             }
         }

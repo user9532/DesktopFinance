@@ -20,6 +20,8 @@ namespace FinanceApp.Views
         private readonly DatabaseManager _db;
         private readonly string _account;
 
+        public string Account => _account;
+
         private readonly List<TransactionRowViewModel> _allRows = new();
         private ObservableCollection<TransactionRowViewModel> _view = new();
 
@@ -337,6 +339,12 @@ namespace FinanceApp.Views
             var row = FindParent<DataGridRow>(e.OriginalSource as DependencyObject);
             if (row?.DataContext is TransactionRowViewModel vm)
                 TrGrid.SelectedItem = vm;
+        }
+
+        private void ToggleClear_Click(object sender, RoutedEventArgs e)
+        {
+            if (TrGrid.SelectedItem is not TransactionRowViewModel row) return;
+            row.Clear = !row.Clear;
         }
 
         private void DeleteRow_Click(object sender, RoutedEventArgs e)

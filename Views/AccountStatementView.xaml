@@ -43,9 +43,10 @@
                   PreviewMouseRightButtonDown="TrGrid_PreviewMouseRightButtonDown">
 
             <DataGrid.ContextMenu>
-                <ContextMenu>
-                    <MenuItem Header="Delete…" Click="DeleteRow_Click"/>
-                    <MenuItem Header="Split…"  Click="SplitRow_Click"/>
+                <ContextMenu Opened="TrGridContextMenu_Opened">
+                    <MenuItem Header="Delete…"        Click="DeleteRow_Click"/>
+                    <MenuItem x:Name="MiSplit" Header="Split…" Click="SplitRow_Click"/>
+                    <MenuItem Header="Check/Uncheck"  Click="ToggleClear_Click"/>
                 </ContextMenu>
             </DataGrid.ContextMenu>
 

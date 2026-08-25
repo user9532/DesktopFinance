@@ -78,6 +78,7 @@
             <MenuItem Header="_View">
                 <MenuItem Header="_Recurring Transactions" Click="ViewRecurring_Click"/>
                 <MenuItem Header="_Accounts and Categories" Click="AccountsAndCategories_Click"/>
+                <MenuItem Header="_Securities" Click="Securities_Click"/>
             </MenuItem>
             <MenuItem Header="_Reports">
                 <MenuItem Header="_Income and Expenses"  Click="IncomeExpenses_Click"/>

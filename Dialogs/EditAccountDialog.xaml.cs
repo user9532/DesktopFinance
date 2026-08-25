@@ -8,15 +8,21 @@ namespace FinanceApp.Dialogs
     {
         private readonly DatabaseManager _db;
         private readonly string _originalName;
+        private readonly bool _inTransactions;
 
-        public EditAccountDialog(DatabaseManager db, string accountName)
+        public EditAccountDialog(DatabaseManager db, string accountName, bool inTransactions)
         {
             InitializeComponent();
-            _db           = db;
-            _originalName = accountName;
-            TxtName.Text  = accountName;
+            _db             = db;
+            _originalName   = accountName;
+            _inTransactions = inTransactions;
+            TxtName.Text    = accountName;
             TxtName.SelectAll();
             TxtName.Focus();
+
+            // Deleting would leave transactions/history referencing a non-existent
+            // account, so only offer it when the account isn't in use anywhere.
+            BtnDelete.Visibility = inTransactions ? Visibility.Collapsed : Visibility.Visible;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
@@ -47,11 +53,31 @@ namespace FinanceApp.Dialogs
             }
 
             using var conn = _db.OpenConnection();
-            using var cmd = new SqliteCommand(
-                "UPDATE AccountChart SET AccountName = @new WHERE AccountName = @old;", conn);
-            cmd.Parameters.AddWithValue("@new", newName);
-            cmd.Parameters.AddWithValue("@old", _originalName);
-            cmd.ExecuteNonQuery();
+            using var tx   = conn.BeginTransaction();
+
+            void Rename(string table, string column)
+            {
+                using var cmd = new SqliteCommand(
+                    $"UPDATE {table} SET {column} = @new WHERE {column} = @old;", conn, tx);
+                cmd.Parameters.AddWithValue("@new", newName);
+                cmd.Parameters.AddWithValue("@old", _originalName);
+                cmd.ExecuteNonQuery();
+            }
+
+            Rename("Transactions", "Account");
+            Rename("Transactions", "Category");
+            Rename("CatHistory",   "Category");
+            Rename("AccountMap",   "AccountName");
+            Rename("RecurTrans",   "Account");
+            Rename("RecurTrans",   "Category");
+            Rename("LoanData",     "AccountName");
+            Rename("AccountChart", "AccountName");
+
+            tx.Commit();
+
+            MessageBox.Show(
+                $"Account '{_originalName}' was renamed to '{newName}' and all related records were updated successfully.",
+                "Account Updated", MessageBoxButton.OK, MessageBoxImage.Information);
 
             DialogResult = true;
         }

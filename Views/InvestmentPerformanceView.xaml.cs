@@ -188,12 +188,12 @@ namespace FinanceApp.Views
                         CsvEscape(row.Portfolio),
                         CsvEscape(row.Name),
                         CsvEscape(row.Symbol),
-                        CsvEscape(row.QuantityDisplay),
-                        CsvEscape(row.PriceDisplay),
-                        CsvEscape(row.CurrentValueDisplay),
-                        CsvEscape(row.CostBasisDisplay),
-                        CsvEscape(row.GainLossDisplay),
-                        CsvEscape(row.PctGainLossDisplay)));
+                        CsvEscape(row.QuantityExport),
+                        CsvEscape(row.PriceExport),
+                        CsvEscape(row.CurrentValueExport),
+                        CsvEscape(row.CostBasisExport),
+                        CsvEscape(row.GainLossExport),
+                        CsvEscape(row.PctGainLossExport)));
 
                 File.WriteAllText(saveDlg.FileName, sb.ToString(), Encoding.UTF8);
 
@@ -239,5 +239,16 @@ namespace FinanceApp.Views
         public string PctGainLossDisplay   => IsTotal
                                                  ? TotalPctGainLoss.ToString("N2") + "%"
                                                  : PctGainLoss.ToString("N2") + "%";
+
+        // CSV export uses these instead of the *_Display properties above so
+        // large numbers don't come out with a comma thousands separator.
+        public string QuantityExport      => IsTotal ? "" : Quantity.ToString("F4");
+        public string PriceExport         => IsTotal ? "" : Price.ToString("F4");
+        public string CurrentValueExport  => CurrentValue.ToString("F2");
+        public string CostBasisExport     => CostBasis.ToString("F2");
+        public string GainLossExport      => IsTotal ? TotalGainLoss.ToString("F2") : GainLoss.ToString("F2");
+        public string PctGainLossExport   => IsTotal
+                                                ? TotalPctGainLoss.ToString("F2") + "%"
+                                                : PctGainLoss.ToString("F2") + "%";
     }
 }

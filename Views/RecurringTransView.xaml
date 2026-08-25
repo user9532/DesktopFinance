@@ -62,6 +62,7 @@
                                 <Button Content="Edit" Padding="6,2" Margin="6,0,0,0"
                                         Style="{StaticResource SecondaryButtonStyle}"
                                         Tag="{Binding}"
+                                        IsEnabled="{Binding IsEditable}"
                                         Click="EditPaymentRow_Click"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>

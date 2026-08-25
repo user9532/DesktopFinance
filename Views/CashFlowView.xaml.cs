@@ -109,7 +109,10 @@ namespace FinanceApp.Views
                 var sb = new StringBuilder();
                 sb.AppendLine("Label,Amount");
                 foreach (var row in _rows)
-                    sb.AppendLine($"{CsvEscape(row.Label)},{CsvEscape(row.AmountDisplay)}");
+                {
+                    var amountStr = row.Amount is decimal amt ? amt.ToString("F2") : "";
+                    sb.AppendLine($"{CsvEscape(row.Label)},{amountStr}");
+                }
 
                 File.WriteAllText(saveDlg.FileName, sb.ToString(), Encoding.UTF8);
 

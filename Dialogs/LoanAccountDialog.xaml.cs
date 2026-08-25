@@ -63,6 +63,9 @@ namespace FinanceApp.Dialogs
                 ? (double)loanAmount / n
                 : (double)loanAmount * monthlyRate / (1.0 - Math.Pow(1.0 + monthlyRate, -n));
 
+            // Round up to the nearest cent so the loan is never under-paid.
+            pmt = Math.Ceiling(pmt * 100.0) / 100.0;
+
             // Save to LoanData
             using (var cmd = new SqliteCommand(
                 "INSERT INTO LoanData (AccountName, StartDate, FirstPmnt, Institution, Principal, Term, Interest, Escrow, Pmt, CurrBalance) " +

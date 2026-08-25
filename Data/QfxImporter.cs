@@ -108,7 +108,7 @@ namespace FinanceApp.Data
                          Memo, Category, TrnType, Clear)
                     VALUES
                         (@acct,@date,@type,@amt,@fid,@name,
-                         @memo,@cat,@trntype,1);", conn);
+                         @memo,@cat,@trntype,0);", conn);
 
                 cmd.Parameters.AddWithValue("@acct",    accountName);
                 cmd.Parameters.AddWithValue("@date",    t.DtPosted);
