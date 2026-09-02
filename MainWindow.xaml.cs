@@ -713,8 +713,15 @@ namespace FinanceApp
         private void RefreshAllStatementCategories()
         {
             foreach (var tab in MainTabControl.Items.OfType<TabItem>())
-                if (tab.Content is AccountStatementView v)
-                    v.RefreshCategories();
+            {
+                switch (tab.Content)
+                {
+                    case AccountStatementView v: v.RefreshCategories(); break;
+                    case CreditCardStatementView v: v.RefreshCategories(); break;
+                    case OtherAccountStatementView v: v.RefreshCategories(); break;
+                    case OtherLiabilityStatementView v: v.RefreshCategories(); break;
+                }
+            }
         }
 
         // ── statement tab helper ──────────────────────────────────────────
@@ -1077,16 +1084,22 @@ namespace FinanceApp
             _homeView.Refresh();
         }
 
-        // Refreshes an open Bank Statement tab for the given account.
-        // Used after a recurring payment/receipt is posted, since posting inserts
-        // directly into the Transactions table and the statement tab (if open)
-        // would otherwise keep showing stale data until manually reopened.
+        // Refreshes any open statement tab (of any account type) for the given account.
+        // Used after a recurring payment/receipt is posted, or after a transaction is
+        // saved in another statement tab that references this account via the Category
+        // column, since either path inserts/updates the Transactions table directly and
+        // an already-open statement tab would otherwise keep showing stale data.
         public void RefreshBankStatementTab(string account)
         {
             foreach (var item in MainTabControl.Items.OfType<TabItem>())
             {
-                if (item.Content is AccountStatementView asv && asv.Account == account)
-                    asv.Refresh();
+                switch (item.Content)
+                {
+                    case AccountStatementView v when v.Account == account: v.Refresh(); break;
+                    case CreditCardStatementView v when v.Account == account: v.Refresh(); break;
+                    case OtherAccountStatementView v when v.Account == account: v.Refresh(); break;
+                    case OtherLiabilityStatementView v when v.Account == account: v.Refresh(); break;
+                }
             }
         }
 

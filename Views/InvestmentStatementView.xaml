@@ -16,7 +16,7 @@
                     <Button Content="Save"    Width="76" Margin="0,0,14,0" Click="Save_Click"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <Button Content="Transaction" Width="90" Margin="0,0,8,0" Click="Transaction_Click"/>
+                    <Button Content="Transaction" Width="90" Margin="0,0,8,0" Style="{StaticResource SecondaryButtonStyle}" Click="Transaction_Click"/>
                     <Button Content="Trade"       Width="70" Margin="0,0,8,0" Click="Trade_Click"/>
                     <Button Content="Portfolio"   Width="80" Click="Portfolio_Click"/>
                 </StackPanel>

@@ -195,6 +195,17 @@ namespace FinanceApp.Views
             _hasChanges = false;
             // Reload to get accurate rowids for inserted rows and refresh display
             LoadData();
+
+            // Other accounts referenced via the Category column (or the Account column,
+            // for category-matched rows) may have their own statement tab open showing
+            // this transaction from the other side — refresh those too.
+            var otherAccounts = toSave
+                .Select(r => r.DisplayCategory)
+                .Where(a => !string.IsNullOrWhiteSpace(a) && a != _account)
+                .Distinct();
+            if (Window.GetWindow(this) is MainWindow main)
+                foreach (var acct in otherAccounts)
+                    main.RefreshBankStatementTab(acct);
         }
 
         private void SaveRow(SqliteConnection conn, TransactionRowViewModel row)
@@ -265,7 +276,8 @@ namespace FinanceApp.Views
                 && !string.IsNullOrWhiteSpace(cleanName)
                 && !string.IsNullOrWhiteSpace(row.DisplayCategory))
             {
-                UpdateCatHistory(conn, cleanName, row.DisplayCategory, amount);
+                int? type = row.IsNew ? (hasPayment ? 1 : 2) : null;
+                UpdateCatHistory(conn, cleanName, row.DisplayCategory, amount, type);
             }
 
             row.OriginalCategory = row.DisplayCategory;
@@ -273,7 +285,7 @@ namespace FinanceApp.Views
             row.IsNew   = false;
         }
 
-        private static void UpdateCatHistory(SqliteConnection conn, string name, string category, decimal amount)
+        private static void UpdateCatHistory(SqliteConnection conn, string name, string category, decimal amount, int? type = null)
         {
             using var chk = new SqliteCommand(
                 "SELECT Category FROM CatHistory WHERE Description=@d;", conn);
@@ -283,19 +295,32 @@ namespace FinanceApp.Views
             if (existing is null)
             {
                 using var ins = new SqliteCommand(
-                    "INSERT INTO CatHistory(Description,Category,Amount) VALUES(@d,@c,@a);", conn);
+                    "INSERT INTO CatHistory(Description,Category,Amount,Type) VALUES(@d,@c,@a,@t);", conn);
                 ins.Parameters.AddWithValue("@d", name);
                 ins.Parameters.AddWithValue("@c", category);
                 ins.Parameters.AddWithValue("@a", (double)amount);
+                ins.Parameters.AddWithValue("@t", (object?)type ?? DBNull.Value);
                 ins.ExecuteNonQuery();
             }
-            else if (existing != category)
+            else
             {
-                using var upd = new SqliteCommand(
-                    "UPDATE CatHistory SET Category=@c WHERE Description=@d;", conn);
-                upd.Parameters.AddWithValue("@d", name);
-                upd.Parameters.AddWithValue("@c", category);
-                upd.ExecuteNonQuery();
+                if (existing != category)
+                {
+                    using var upd = new SqliteCommand(
+                        "UPDATE CatHistory SET Category=@c WHERE Description=@d;", conn);
+                    upd.Parameters.AddWithValue("@d", name);
+                    upd.Parameters.AddWithValue("@c", category);
+                    upd.ExecuteNonQuery();
+                }
+
+                if (type is not null)
+                {
+                    using var updType = new SqliteCommand(
+                        "UPDATE CatHistory SET Type=@t WHERE Description=@d;", conn);
+                    updType.Parameters.AddWithValue("@d", name);
+                    updType.Parameters.AddWithValue("@t", type.Value);
+                    updType.ExecuteNonQuery();
+                }
             }
         }
 
@@ -337,6 +362,68 @@ namespace FinanceApp.Views
             Dispatcher.BeginInvoke(new Action(RecalcBalance));
         }
 
+        private bool _suppressNameTextChanged;
+
+        private void NameTextBox_Loaded(object sender, RoutedEventArgs e)
+        {
+            if (sender is TextBox tb)
+            {
+                tb.CaretIndex = tb.Text.Length;
+            }
+        }
+
+        // Live prefix search as the user types in the Name column of a new row:
+        // finds the first CatHistory Description starting with the typed text and
+        // fills in the full Name, Category, and Payment/Deposit amount.
+        private void NameTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            if (_suppressNameTextChanged) return;
+            if (sender is not TextBox tb) return;
+            if (tb.DataContext is not TransactionRowViewModel row || !row.IsNew) return;
+
+            var typed = CleanText(tb.Text);
+            if (typed.Length < 2) return;
+
+            using var conn = _db.OpenConnection();
+            using var cmd = new SqliteCommand(
+                "SELECT Description, Category, Amount, Type FROM CatHistory " +
+                "WHERE Description LIKE @p ESCAPE '\\' ORDER BY Description LIMIT 1;", conn);
+            cmd.Parameters.AddWithValue("@p", EscapeLike(typed) + "%");
+            using var r = cmd.ExecuteReader();
+            if (!r.Read()) return;
+
+            var fullName = r.IsDBNull(0) ? "" : r.GetString(0);
+            var cat      = r.IsDBNull(1) ? "" : r.GetString(1);
+            var amt      = r.IsDBNull(2) ? 0m : (decimal)r.GetDouble(2);
+            var type     = r.IsDBNull(3) ? 0  : r.GetInt32(3);
+
+            if (string.IsNullOrEmpty(fullName) || fullName.Length <= typed.Length) return;
+
+            row.NameMatchedCatHistory = true;
+
+            _suppressNameTextChanged = true;
+            var caret = tb.CaretIndex;
+            tb.Text = fullName;
+            tb.CaretIndex = caret;
+            tb.SelectionStart = caret;
+            tb.SelectionLength = fullName.Length - caret;
+            _suppressNameTextChanged = false;
+
+            if (!string.IsNullOrEmpty(cat))
+                row.DisplayCategory = cat;
+
+            if (amt > 0 && row.PaymentDecimal == 0 && row.DepositDecimal == 0)
+            {
+                if (type == 2)
+                    row.Deposit = amt.ToString("N2");
+                else
+                    row.Payment = amt.ToString("N2");
+            }
+        }
+
+        private static string EscapeLike(string s) =>
+            s.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+
         private void AutoFillFromCatHistory(TransactionRowViewModel row)
         {
             var name = CleanText(row.Name);
@@ -344,7 +431,7 @@ namespace FinanceApp.Views
 
             using var conn = _db.OpenConnection();
             using var cmd = new SqliteCommand(
-                "SELECT Category, Amount FROM CatHistory WHERE Description = @d LIMIT 1;", conn);
+                "SELECT Category, Amount, Type FROM CatHistory WHERE Description = @d LIMIT 1;", conn);
             cmd.Parameters.AddWithValue("@d", name);
             using var r = cmd.ExecuteReader();
             if (!r.Read())
@@ -355,14 +442,20 @@ namespace FinanceApp.Views
 
             row.NameMatchedCatHistory = true;
 
-            var cat = r.IsDBNull(0) ? "" : r.GetString(0);
-            var amt = r.IsDBNull(1) ? 0m : (decimal)r.GetDouble(1);
+            var cat  = r.IsDBNull(0) ? "" : r.GetString(0);
+            var amt  = r.IsDBNull(1) ? 0m : (decimal)r.GetDouble(1);
+            var type = r.IsDBNull(2) ? 0  : r.GetInt32(2);
 
             if (!string.IsNullOrEmpty(cat))
                 row.DisplayCategory = cat;
 
             if (amt > 0 && row.PaymentDecimal == 0 && row.DepositDecimal == 0)
-                row.Payment = amt.ToString("N2");
+            {
+                if (type == 2)
+                    row.Deposit = amt.ToString("N2");
+                else
+                    row.Payment = amt.ToString("N2");
+            }
         }
 
         private void Clear_Click(object sender, RoutedEventArgs e)

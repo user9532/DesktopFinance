@@ -1,7 +1,9 @@
 using FinanceApp.Data;
 using FinanceApp.Dialogs;
+using System;
 using System.IO;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace FinanceApp
 {
@@ -9,6 +11,9 @@ namespace FinanceApp
     {
         private void App_Startup(object sender, StartupEventArgs e)
         {
+            DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += App_UnhandledException;
+
             // Prevent WPF from shutting down when the startup dialog closes.
             ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
@@ -34,6 +39,34 @@ namespace FinanceApp
             ShutdownMode = ShutdownMode.OnMainWindowClose;
             var window = new MainWindow();
             window.Show();
+        }
+
+        private void App_DispatcherUnhandledException(object sender, DispatcherUnhandledExceptionEventArgs e)
+        {
+            LogAndShow(e.Exception);
+            e.Handled = true;
+        }
+
+        private void App_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            if (e.ExceptionObject is Exception ex) LogAndShow(ex);
+        }
+
+        private static void LogAndShow(Exception ex)
+        {
+            try
+            {
+                var logPath = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "DesktopFinance", "crash.log");
+                Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+                File.AppendAllText(logPath, $"{DateTime.Now}: {ex}\n\n");
+            }
+            catch { /* logging is best-effort */ }
+
+            MessageBox.Show(
+                $"An unexpected error occurred:\n\n{ex.Message}\n\nDetails were logged.",
+                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 }

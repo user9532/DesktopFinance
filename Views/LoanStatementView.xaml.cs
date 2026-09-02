@@ -128,5 +128,10 @@ namespace FinanceApp.Views
             if (Window.GetWindow(this) is MainWindow main)
                 main.ActivateOrOpenLoanInterest(_account);
         }
+
+        private void Info_Click(object sender, RoutedEventArgs e)
+        {
+            new LoanInfoDialog(_db, _account) { Owner = Window.GetWindow(this) }.ShowDialog();
+        }
     }
 }

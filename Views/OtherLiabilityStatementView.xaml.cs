@@ -193,6 +193,14 @@ namespace FinanceApp.Views
 
             _hasChanges = false;
             LoadData();
+
+            var otherAccounts = toSave
+                .Select(r => r.DisplayCategory)
+                .Where(a => !string.IsNullOrWhiteSpace(a) && a != _account)
+                .Distinct();
+            if (Window.GetWindow(this) is MainWindow main)
+                foreach (var acct in otherAccounts)
+                    main.RefreshBankStatementTab(acct);
         }
 
         private void SaveRow(SqliteConnection conn, TransactionRowViewModel row)

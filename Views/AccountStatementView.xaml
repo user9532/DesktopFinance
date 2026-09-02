@@ -74,9 +74,21 @@
                                     Width="80"/>
 
                 <!-- Name -->
-                <DataGridTextColumn Header="Name"
-                                    Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
-                                    Width="160"/>
+                <DataGridTemplateColumn Header="Name" Width="160" SortMemberPath="Name">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Name}" Margin="3,1"
+                                       VerticalAlignment="Center"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                    <DataGridTemplateColumn.CellEditingTemplate>
+                        <DataTemplate>
+                            <TextBox Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}"
+                                     TextChanged="NameTextBox_TextChanged"
+                                     Loaded="NameTextBox_Loaded"/>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellEditingTemplate>
+                </DataGridTemplateColumn>
 
                 <!-- Category (ComboBox) -->
                 <DataGridTemplateColumn Header="Category" Width="160">
