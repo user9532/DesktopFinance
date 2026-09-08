@@ -42,13 +42,21 @@ namespace FinanceApp.Views
             var accounts = LoadNonBankAccounts(conn);
 
             // ── Cash Inflows: Account-side CREDIT + Category-side DEBIT ──
+            // Income items are netted (Category-side DEBIT minus Category-side CREDIT)
+            // and shown here as a single net amount, rather than splitting the CREDIT
+            // side of the same category off into Cash Outflows.
             rows.Add(new NetWorthRow { Label = "Cash Inflows", IsBold = true });
 
             decimal totalInflows = 0;
-            foreach (var (name, portfolio) in accounts)
+            foreach (var (name, portfolio, accountType) in accounts)
             {
-                var amt = SumFlow(conn, name, portfolio, startStr, endStr,
-                                  accountSideTrn: "CREDIT", categorySideTrn: "DEBIT");
+                if (accountType == "Expense") continue;
+
+                decimal amt = accountType == "Income"
+                    ? NetCategoryFlow(conn, name, startStr, endStr, primaryTrn: "DEBIT", offsetTrn: "CREDIT")
+                    : SumFlow(conn, name, portfolio, startStr, endStr,
+                              accountSideTrn: "CREDIT", categorySideTrn: "DEBIT");
+
                 totalInflows += amt;
                 if (amt != 0)
                     rows.Add(new NetWorthRow { Label = name, Amount = amt, IsIndented = true });
@@ -56,13 +64,21 @@ namespace FinanceApp.Views
             rows.Add(new NetWorthRow { Label = "Total Cash Inflows", Amount = totalInflows, IsBold = true });
 
             // ── Cash Outflows: Account-side DEBIT + Category-side CREDIT ──
+            // Expense items are netted (Category-side CREDIT minus Category-side DEBIT)
+            // and shown here as a single net amount, rather than splitting the DEBIT
+            // side of the same category off into Cash Inflows.
             rows.Add(new NetWorthRow { Label = "Cash Outflows", IsBold = true });
 
             decimal totalOutflows = 0;
-            foreach (var (name, portfolio) in accounts)
+            foreach (var (name, portfolio, accountType) in accounts)
             {
-                var amt = SumFlow(conn, name, portfolio, startStr, endStr,
-                                  accountSideTrn: "DEBIT", categorySideTrn: "CREDIT");
+                if (accountType == "Income") continue;
+
+                decimal amt = accountType == "Expense"
+                    ? NetCategoryFlow(conn, name, startStr, endStr, primaryTrn: "CREDIT", offsetTrn: "DEBIT")
+                    : SumFlow(conn, name, portfolio, startStr, endStr,
+                              accountSideTrn: "DEBIT", categorySideTrn: "CREDIT");
+
                 totalOutflows += amt;
                 if (amt != 0)
                     rows.Add(new NetWorthRow { Label = name, Amount = amt, IsIndented = true });
@@ -130,11 +146,11 @@ namespace FinanceApp.Views
             s.Contains(',') || s.Contains('"') || s.Contains('\n')
                 ? $"\"{s.Replace("\"", "\"\"")}\"" : s;
 
-        private static List<(string Name, string Portfolio)> LoadNonBankAccounts(SqliteConnection conn)
+        private static List<(string Name, string Portfolio, string AccountType)> LoadNonBankAccounts(SqliteConnection conn)
         {
-            var list = new List<(string, string)>();
+            var list = new List<(string, string, string)>();
             using var cmd = new SqliteCommand(@"
-                SELECT AccountName, Portfolio FROM AccountChart
+                SELECT AccountName, Portfolio, AccountType FROM AccountChart
                 WHERE AccountType != 'Bank'
                 ORDER BY
                     CASE AccountType
@@ -150,7 +166,7 @@ namespace FinanceApp.Views
                     AccountName;", conn);
             using var r = cmd.ExecuteReader();
             while (r.Read())
-                list.Add((r.GetString(0), r.IsDBNull(1) ? "" : r.GetString(1)));
+                list.Add((r.GetString(0), r.IsDBNull(1) ? "" : r.GetString(1), r.IsDBNull(2) ? "" : r.GetString(2)));
             return list;
         }
 
@@ -207,6 +223,47 @@ namespace FinanceApp.Views
             }
 
             return total;
+        }
+
+        // Nets an Expense/Income category's two-directional Category-column activity
+        // into a single amount: primaryTrn is the category's normal-balance direction
+        // (CREDIT for Expense, DEBIT for Income) and offsetTrn is the reversing
+        // direction that would otherwise land in the opposite cash-flow section.
+        private static decimal NetCategoryFlow(SqliteConnection conn, string category,
+                                               string startStr, string endStr,
+                                               string primaryTrn, string offsetTrn)
+        {
+            decimal primary = 0, offset = 0;
+
+            using (var cmd = new SqliteCommand(@"
+                SELECT COALESCE(SUM(Amount), 0)
+                FROM   Transactions
+                WHERE  Category = @cat
+                  AND  TrnType = @trn
+                  AND  Date >= @start AND Date <= @end;", conn))
+            {
+                cmd.Parameters.AddWithValue("@cat",   category);
+                cmd.Parameters.AddWithValue("@trn",   primaryTrn);
+                cmd.Parameters.AddWithValue("@start", startStr);
+                cmd.Parameters.AddWithValue("@end",   endStr);
+                primary = Convert.ToDecimal(cmd.ExecuteScalar());
+            }
+
+            using (var cmd = new SqliteCommand(@"
+                SELECT COALESCE(SUM(Amount), 0)
+                FROM   Transactions
+                WHERE  Category = @cat
+                  AND  TrnType = @trn
+                  AND  Date >= @start AND Date <= @end;", conn))
+            {
+                cmd.Parameters.AddWithValue("@cat",   category);
+                cmd.Parameters.AddWithValue("@trn",   offsetTrn);
+                cmd.Parameters.AddWithValue("@start", startStr);
+                cmd.Parameters.AddWithValue("@end",   endStr);
+                offset = Convert.ToDecimal(cmd.ExecuteScalar());
+            }
+
+            return primary - offset;
         }
 
         // Combined balance of all Bank accounts through the given date:

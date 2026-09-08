@@ -1,0 +1,27 @@
+<Project Sdk="WixToolset.Sdk/6.0.2">
+
+  <PropertyGroup>
+    <!-- Product version shown in Add/Remove Programs and used for MajorUpgrade
+         comparisons. Bump this (Major.Minor.Build) for every release you ship. -->
+    <ProductVersion>1.0.0</ProductVersion>
+    <Platforms>x64</Platforms>
+    <Platform Condition="'$(Platform)'==''">x64</Platform>
+    <DefineConstants>ProductVersion=$(ProductVersion)</DefineConstants>
+
+    <!-- Where the self-contained publish output lives. Overridable from the
+         command line, e.g. -p:PublishDir=..\publish\ -->
+    <PublishDir Condition="'$(PublishDir)'==''">$(MSBuildProjectDirectory)\..\publish\</PublishDir>
+    <DefineConstants>$(DefineConstants);PublishDir=$(PublishDir)</DefineConstants>
+
+    <OutputType>Package</OutputType>
+    <OutputName>DesktopFinanceSetup</OutputName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- WiX extension providing the standard install-directory UI dialogs. -->
+    <PackageReference Include="WixToolset.UI.wixext" Version="6.0.1" />
+  </ItemGroup>
+
+  <!-- Package.wxs is picked up automatically — the WiX SDK globs *.wxs by default. -->
+
+</Project>
