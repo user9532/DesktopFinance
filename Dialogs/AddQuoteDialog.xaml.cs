@@ -109,7 +109,52 @@ namespace FinanceApp.Dialogs
                     return;
                 }
 
-                int imported = 0, skipped = 0;
+                // Resolve every symbol in the file against the Securities table first,
+                // prompting once per unknown symbol via Add Security, before importing
+                // any quotes. Symbols the user declines to add are skipped entirely.
+                var knownSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                using (var conn0 = _db.OpenConnection())
+                using (var cmd = new SqliteCommand("SELECT Symbol FROM Securities;", conn0))
+                using (var r = cmd.ExecuteReader())
+                {
+                    while (r.Read()) knownSymbols.Add(r.GetString(0));
+                }
+
+                var declinedSymbols = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                var fileSymbols = new List<string>();
+                for (int i = 1; i < lines.Length; i++)
+                {
+                    var cols = SplitCsvLine(lines[i]);
+                    if (cols.Length <= symbolIdx) continue;
+                    var symbol = cols[symbolIdx].Trim();
+                    if (!string.IsNullOrEmpty(symbol)) fileSymbols.Add(symbol);
+                }
+
+                foreach (var symbol in fileSymbols.Distinct(StringComparer.OrdinalIgnoreCase))
+                {
+                    if (knownSymbols.Contains(symbol)) continue;
+
+                    var result = MessageBox.Show(
+                        $"The symbol \"{symbol}\" was not found in the Securities table.\n\n" +
+                        "Add it now so its price history can be imported?",
+                        "Unknown Security", MessageBoxButton.YesNo, MessageBoxImage.Question);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        var addDlg = new AddSecurityDialog(_db, symbol) { Owner = this };
+                        if (addDlg.ShowDialog() == true)
+                        {
+                            knownSymbols.Add(symbol);
+                            continue;
+                        }
+                    }
+
+                    declinedSymbols.Add(symbol);
+                }
+
+                LoadSymbols();
+
+                int imported = 0, skipped = 0, skippedUnknown = 0;
 
                 using var conn = _db.OpenConnection();
                 using var tx   = conn.BeginTransaction();
@@ -135,6 +180,12 @@ namespace FinanceApp.Dialogs
                         continue;
                     }
 
+                    if (declinedSymbols.Contains(symbol))
+                    {
+                        skippedUnknown++;
+                        continue;
+                    }
+
                     InsertQuote(conn, tx, dt.ToString("yyyy-MM-dd"), symbol, prc);
                     imported++;
                 }
@@ -143,6 +194,7 @@ namespace FinanceApp.Dialogs
 
                 var msg = $"Import complete.\n\nRows imported: {imported}";
                 if (skipped > 0) msg += $"\nRows skipped (invalid): {skipped}";
+                if (skippedUnknown > 0) msg += $"\nRows skipped (security not added): {skippedUnknown}";
                 MessageBox.Show(msg, "Import Complete",
                     MessageBoxButton.OK, MessageBoxImage.Information);
             }

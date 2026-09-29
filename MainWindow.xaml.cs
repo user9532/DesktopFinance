@@ -214,6 +214,12 @@ namespace FinanceApp
 
             try
             {
+                // Preserve this machine's backup-on-close configuration across the
+                // restore — it's a local preference, not part of the financial data,
+                // and the backup file being restored may carry a different (or no)
+                // setting that would otherwise silently replace it.
+                var savedBackupSettings = _db.GetBackupSettings();
+
                 // Close all statement tabs without prompting for saves.
                 var tabs = MainTabControl.Items.OfType<TabItem>()
                     .Where(t => t.Content is AccountStatementView)
@@ -226,6 +232,7 @@ namespace FinanceApp
 
                 File.Copy(openDlg.FileName, _db.DbPath, overwrite: true);
                 _db.InitializeDatabase();
+                _db.SaveBackupSettings(savedBackupSettings.BackupOnClose, savedBackupSettings.BackupFolder);
 
                 MessageBox.Show("Backup restored successfully.",
                     "Restore Complete", MessageBoxButton.OK, MessageBoxImage.Information);
@@ -288,6 +295,23 @@ namespace FinanceApp
 
         private void MainWindow_Closing(object sender, CancelEventArgs e)
         {
+            try
+            {
+                MainWindow_ClosingCore(e);
+            }
+            finally
+            {
+                // Always attempt the configured backup on a real close, even if
+                // something above threw (e.g. a save failure) — otherwise an
+                // unrelated error partway through closing would silently skip the
+                // backup with no indication to the user that it didn't happen.
+                if (!e.Cancel)
+                    BackupOnCloseIfConfigured();
+            }
+        }
+
+        private void MainWindow_ClosingCore(CancelEventArgs e)
+        {
             var dirtyBank = MainTabControl.Items
                 .OfType<TabItem>()
                 .Select(t => t.Content as AccountStatementView)
@@ -344,8 +368,6 @@ namespace FinanceApp
                     return;
                 }
             }
-
-            BackupOnCloseIfConfigured();
         }
 
         private void BackupOnCloseIfConfigured()

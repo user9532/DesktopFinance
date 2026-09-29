@@ -89,17 +89,7 @@ namespace FinanceApp.Dialogs
             cmd.Parameters.AddWithValue("@memo", TxtMemo.Text.Trim());
             cmd.ExecuteNonQuery();
 
-            // Clear for another entry
-            DpDate.SelectedDate    = null;
-            TxtCheckNo.Text        = "";
-            TxtName.Text           = "";
-            CbCategory.SelectedItem = null;
-            CbType.SelectedIndex   = 0;
-            TxtAmount.Text         = "";
-            TxtMemo.Text           = "";
-
-            MessageBox.Show("Transaction saved.", "Saved",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            DialogResult = true;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;

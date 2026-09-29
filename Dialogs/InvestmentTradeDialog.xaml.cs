@@ -127,16 +127,18 @@ namespace FinanceApp.Dialogs
             ins.Parameters.AddWithValue("@trn",    trnType);
             ins.ExecuteNonQuery();
 
-            // Clear for another entry
-            DpDate.SelectedDate  = null;
-            CbAction.SelectedIndex = 0;
-            CbSymbol.SelectedItem  = null;
-            TxtQuantity.Text       = "";
-            TxtPrice.Text          = "";
-            TxtCommission.Text     = "";
+            // Record the trade price as a quote so the security is valued using
+            // this price on this date until a more current quote is added.
+            using (var quoteCmd = new SqliteCommand(
+                "INSERT OR REPLACE INTO Quotes (Date, Symbol, Price) VALUES (@date, @sym, @price);", conn2))
+            {
+                quoteCmd.Parameters.AddWithValue("@date",  date);
+                quoteCmd.Parameters.AddWithValue("@sym",   symbol);
+                quoteCmd.Parameters.AddWithValue("@price", (double)price);
+                quoteCmd.ExecuteNonQuery();
+            }
 
-            MessageBox.Show("Trade saved.", "Saved",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            DialogResult = true;
         }
 
         private void Cancel_Click(object sender, RoutedEventArgs e) => DialogResult = false;

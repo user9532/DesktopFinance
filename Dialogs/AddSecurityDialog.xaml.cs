@@ -8,10 +8,12 @@ namespace FinanceApp.Dialogs
     {
         private readonly DatabaseManager _db;
 
-        public AddSecurityDialog(DatabaseManager db)
+        public AddSecurityDialog(DatabaseManager db, string? prefillSymbol = null)
         {
             InitializeComponent();
             _db = db;
+            if (!string.IsNullOrEmpty(prefillSymbol))
+                TxtSymbol.Text = prefillSymbol;
         }
 
         private void Save_Click(object sender, RoutedEventArgs e)
