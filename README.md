@@ -66,7 +66,7 @@ DesktopFinance follows a lightweight MVVM pattern without an MVVM framework:
 
 | Table | Purpose |
 |-------|---------|
-| `AccountChart` | Account catalog with type and grouping |
+| `AccountChart` | Account/category catalog with type and grouping |
 | `Transactions` | Double-entry rows (Account + Category columns) |
 | `CatHistory` | Category/name autocomplete history |
 | `Budget` | Budget entries by category |
@@ -81,10 +81,10 @@ For more detail, see [CLAUDE.md](CLAUDE.md).
 
 ## Documentation
 
-- [Documentation/Introducing.html](Documentation/Introducing.html) — feature overview
-- [Documentation/UserManual.html](Documentation/UserManual.html) — full user manual
-- [Documentation/Screenshots.html](Documentation/Screenshots.html) — screenshots
+- [https://eworkpaper.com/desktopfinance/](https://eworkpaper.com/desktopfinance/) — feature overview
+- [https://eworkpaper.com/desktopfinance/usermanual.php](https://eworkpaper.com/desktopfinance/usermanual.php) — full user manual
+- [https://eworkpaper.com/desktopfinance/screenshots.php](https://eworkpaper.com/desktopfinance/screenshots.php) — screenshots
 
 ## License
 
-See [Installer/License.rtf](Installer/License.rtf). The software is provided "as is," without warranty, and the license excludes the developer from liability arising from its use. This is not a substitute for legal advice.
+See [Installer/License.rtf](Installer/License.rtf). The software is provided "as is," without warranty, and the license excludes the developer from liability arising from its use. 
