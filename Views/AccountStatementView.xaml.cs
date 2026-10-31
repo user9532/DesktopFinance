@@ -375,11 +375,23 @@ namespace FinanceApp.Views
         // Live prefix search as the user types in the Name column of a new row:
         // finds the first CatHistory Description starting with the typed text and
         // fills in the full Name, Category, and Payment/Deposit amount.
+        //
+        // Only triggers when the user is adding characters at the caret (typing
+        // forward), never when deleting/editing — otherwise backspacing into an
+        // already-accepted suggestion would immediately re-expand it, making the
+        // suggested text effectively impossible to edit or shorten by hand.
         private void NameTextBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
         {
             if (_suppressNameTextChanged) return;
             if (sender is not TextBox tb) return;
             if (tb.DataContext is not TransactionRowViewModel row || !row.IsNew) return;
+
+            bool isInsertion = e.Changes.Any(c => c.AddedLength > 0 && c.RemovedLength == 0);
+            if (!isInsertion) return;
+
+            // Only auto-suggest while the caret is at the end of the text — once the
+            // user is editing/positioning the cursor inside existing text, leave it alone.
+            if (tb.CaretIndex != tb.Text.Length) return;
 
             var typed = CleanText(tb.Text);
             if (typed.Length < 2) return;

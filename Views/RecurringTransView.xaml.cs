@@ -84,6 +84,11 @@ namespace FinanceApp.Views
                 });
             }
 
+            // Loan payments (TrType 3) are only shown while the loan still has a
+            // balance owed — once CurrBalance in LoanData reaches zero (or below),
+            // the loan is paid off and the recurring payment no longer applies.
+            allRows.RemoveAll(r => r.TrType == 3 && !LoanHasBalance(conn, r.Account));
+
             // Group by Id; first row per Id is the display row; mark splits
             var seen   = new HashSet<long>();
             var counts = new Dictionary<long, int>();
@@ -102,6 +107,16 @@ namespace FinanceApp.Views
 
             PaymentsGrid.ItemsSource = payments;
             ReceiptsGrid.ItemsSource = receipts;
+        }
+
+        private static bool LoanHasBalance(SqliteConnection conn, string accountName)
+        {
+            using var cmd = new SqliteCommand(
+                "SELECT CurrBalance FROM LoanData WHERE AccountName = @acct;", conn);
+            cmd.Parameters.AddWithValue("@acct", accountName);
+            var result = cmd.ExecuteScalar();
+            if (result is null || result is DBNull) return false;
+            return Convert.ToDecimal(result) > 0m;
         }
 
         private void NewPayment_Click(object sender, RoutedEventArgs e)
@@ -149,7 +164,7 @@ namespace FinanceApp.Views
                     if (Window.GetWindow(this) is MainWindow main)
                     {
                         main.RefreshHome();
-                        main.RefreshBankStatementTab(row.Account);
+                        main.RefreshBankStatementTab(detail.PostedAccount);
                     }
                 }
             }
@@ -167,7 +182,7 @@ namespace FinanceApp.Views
                     if (Window.GetWindow(this) is MainWindow main)
                     {
                         main.RefreshHome();
-                        main.RefreshBankStatementTab(row.Account);
+                        main.RefreshBankStatementTab(detail.PostedAccount);
                     }
                 }
             }

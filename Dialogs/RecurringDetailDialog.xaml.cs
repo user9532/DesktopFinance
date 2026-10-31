@@ -24,6 +24,11 @@ namespace FinanceApp.Dialogs
         private readonly List<RecurLineControls> _lines = new();
         private          int                     _frequency;
 
+        // The account the transaction was actually posted to (set on Post),
+        // which may differ from the account the item was originally associated
+        // with if the user changed the account dropdown before posting.
+        public string PostedAccount { get; private set; } = "";
+
         public RecurringDetailDialog(DatabaseManager db, long id, int trType = 1)
         {
             _db     = db;
@@ -190,6 +195,7 @@ namespace FinanceApp.Dialogs
             upd.ExecuteNonQuery();
 
             tx.Commit();
+            PostedAccount = account;
             DialogResult = true;
         }
 

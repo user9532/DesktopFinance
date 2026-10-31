@@ -6,6 +6,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.Win32;
 using System;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Windows;
@@ -220,9 +221,11 @@ namespace FinanceApp
                 // setting that would otherwise silently replace it.
                 var savedBackupSettings = _db.GetBackupSettings();
 
-                // Close all statement tabs without prompting for saves.
+                // Close every open tab except Home, without prompting for saves —
+                // any of them (statements, reports, Recurring Transactions, etc.)
+                // would otherwise keep showing data from the database being replaced.
                 var tabs = MainTabControl.Items.OfType<TabItem>()
-                    .Where(t => t.Content is AccountStatementView)
+                    .Where(t => t != HomeTab)
                     .ToList();
                 foreach (var tab in tabs)
                     MainTabControl.Items.Remove(tab);
@@ -254,9 +257,11 @@ namespace FinanceApp
 
             try
             {
-                // Close all statement tabs without prompting for saves.
+                // Close every open tab except Home, without prompting for saves —
+                // any of them (statements, reports, Recurring Transactions, etc.)
+                // would otherwise keep showing data from the database being replaced.
                 var tabs = MainTabControl.Items.OfType<TabItem>()
-                    .Where(t => t.Content is AccountStatementView)
+                    .Where(t => t != HomeTab)
                     .ToList();
                 foreach (var tab in tabs)
                     MainTabControl.Items.Remove(tab);
@@ -942,6 +947,22 @@ namespace FinanceApp
         private void About_Click(object sender, RoutedEventArgs e)
         {
             new AboutDialog { Owner = this }.ShowDialog();
+        }
+
+        private void HelpLink_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                Process.Start(new ProcessStartInfo("https://eworkpaper.com/desktopfinance/help.php")
+                {
+                    UseShellExecute = true
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Could not open the help page:\n\n{ex.Message}",
+                    "Help", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void CashFlowStatement_Click(object sender, RoutedEventArgs e)
