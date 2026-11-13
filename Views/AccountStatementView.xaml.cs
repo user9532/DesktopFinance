@@ -313,6 +313,18 @@ namespace FinanceApp.Views
                     upd.ExecuteNonQuery();
                 }
 
+                // Keep the stored Amount current so autocomplete suggests the
+                // most recently entered amount for this name, not whatever
+                // amount happened to be used the very first time it was seen.
+                if (amount != 0)
+                {
+                    using var updAmt = new SqliteCommand(
+                        "UPDATE CatHistory SET Amount=@a WHERE Description=@d;", conn);
+                    updAmt.Parameters.AddWithValue("@d", name);
+                    updAmt.Parameters.AddWithValue("@a", (double)amount);
+                    updAmt.ExecuteNonQuery();
+                }
+
                 if (type is not null)
                 {
                     using var updType = new SqliteCommand(
@@ -321,6 +333,33 @@ namespace FinanceApp.Views
                     updType.Parameters.AddWithValue("@t", type.Value);
                     updType.ExecuteNonQuery();
                 }
+            }
+        }
+
+        // Inserts/updates only the Category for a name, leaving Amount untouched
+        // (or NULL on first insert) so it isn't locked to 0 before SaveRow runs.
+        private static void UpdateCatHistoryCategoryOnly(SqliteConnection conn, string name, string category)
+        {
+            using var chk = new SqliteCommand(
+                "SELECT Category FROM CatHistory WHERE Description=@d;", conn);
+            chk.Parameters.AddWithValue("@d", name);
+            var existing = chk.ExecuteScalar() as string;
+
+            if (existing is null)
+            {
+                using var ins = new SqliteCommand(
+                    "INSERT INTO CatHistory(Description,Category,Amount,Type) VALUES(@d,@c,NULL,NULL);", conn);
+                ins.Parameters.AddWithValue("@d", name);
+                ins.Parameters.AddWithValue("@c", category);
+                ins.ExecuteNonQuery();
+            }
+            else if (existing != category)
+            {
+                using var upd = new SqliteCommand(
+                    "UPDATE CatHistory SET Category=@c WHERE Description=@d;", conn);
+                upd.Parameters.AddWithValue("@d", name);
+                upd.Parameters.AddWithValue("@c", category);
+                upd.ExecuteNonQuery();
             }
         }
 
@@ -344,7 +383,12 @@ namespace FinanceApp.Views
                 Dispatcher.BeginInvoke(new Action(() => AutoFillFromCatHistory(newRow)));
             }
 
-            // When the Category combo commits, sync CatHistory using the row's Name.
+            // When the Category combo commits, sync the Category in CatHistory using
+            // the row's Name. The Amount is intentionally NOT written here — at this
+            // point Payment/Deposit may not have been entered yet, and writing Amount=0
+            // here would overwrite/seed CatHistory before SaveRow has the real amount.
+            // SaveRow (run on Save, after all columns have committed) is solely
+            // responsible for persisting the Amount.
             if (e.Column == TrGrid.Columns[3]
                 && e.Row.DataContext is TransactionRowViewModel row
                 && !row.MatchedViaCategory)
@@ -354,7 +398,7 @@ namespace FinanceApp.Views
                 if (!string.IsNullOrWhiteSpace(cleanName) && !string.IsNullOrWhiteSpace(category))
                 {
                     using var conn = _db.OpenConnection();
-                    UpdateCatHistory(conn, cleanName, category, 0);
+                    UpdateCatHistoryCategoryOnly(conn, cleanName, category);
                 }
             }
 

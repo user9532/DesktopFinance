@@ -45,7 +45,16 @@ namespace FinanceApp.Views
         public string Name
         {
             get => _name;
-            set { _name = value; Notify(); Touch(); }
+            set
+            {
+                // Guard against redundant Notify() on every keystroke: with
+                // UpdateSourceTrigger=PropertyChanged, raising PropertyChanged
+                // here round-trips back through the TextBox's binding and resets
+                // its CaretIndex to 0, making in-place edits (backspace, arrow
+                // keys, clicking mid-text) effectively impossible.
+                if (_name == value) return;
+                _name = value; Notify(); Touch();
+            }
         }
 
         private string _displayCategory = "";
