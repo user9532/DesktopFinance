@@ -24,43 +24,9 @@ namespace FinanceApp.Data
             using var conn = new SqliteConnection(_connectionString);
             conn.Open();
             CreateTables(conn);
-            MigrateSchema(conn);
             SeedVersionRow(conn);
         }
 
-        // Adds columns that were introduced after a database was first created.
-        // CREATE TABLE IF NOT EXISTS does not retroactively add columns to an
-        // existing table, so older database files need an explicit ALTER TABLE.
-        private static void MigrateSchema(SqliteConnection conn)
-        {
-            EnsureColumn(conn, "LoanData", "AccountName", "TEXT");
-            EnsureColumn(conn, "LoanData", "Institution",  "TEXT");
-            EnsureColumn(conn, "LoanData", "StartDate",    "TEXT");
-            EnsureColumn(conn, "LoanData", "Principal",    "REAL");
-            EnsureColumn(conn, "LoanData", "Interest",     "REAL");
-            EnsureColumn(conn, "LoanData", "Term",         "REAL");
-            EnsureColumn(conn, "LoanData", "Escrow",       "REAL");
-            EnsureColumn(conn, "LoanData", "Pmt",          "REAL");
-            EnsureColumn(conn, "LoanData", "FirstPmnt",    "TEXT");
-            EnsureColumn(conn, "LoanData", "CurrBalance",  "REAL");
-            EnsureColumn(conn, "CatHistory", "Type",       "INTEGER");
-            EnsureColumn(conn, "AccountChart", "Status",   "INTEGER");
-        }
-
-        private static void EnsureColumn(SqliteConnection conn, string table, string column, string type)
-        {
-            using var check = new SqliteCommand($"PRAGMA table_info({table});", conn);
-            using (var r = check.ExecuteReader())
-            {
-                while (r.Read())
-                    if (string.Equals(r.GetString(1), column, StringComparison.OrdinalIgnoreCase))
-                        return;
-            }
-
-            using var alter = new SqliteCommand($"ALTER TABLE {table} ADD COLUMN {column} {type};", conn);
-            alter.ExecuteNonQuery();
-        }
-    
         public SqliteConnection OpenConnection()
         {
             var conn = new SqliteConnection(_connectionString);
