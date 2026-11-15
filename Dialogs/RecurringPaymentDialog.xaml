@@ -2,11 +2,11 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Set Up Recurring Payment"
-        Height="520" Width="780"
+        Height="520" Width="860"
         WindowStartupLocation="CenterOwner"
         ResizeMode="CanResize"
         ShowInTaskbar="False"
-        MinHeight="420" MinWidth="680">
+        MinHeight="420" MinWidth="840">
 
     <DockPanel Margin="16,14,16,14">
 

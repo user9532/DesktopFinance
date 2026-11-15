@@ -12,7 +12,7 @@
     you bump for every release.
   -->
   <Package Name="DesktopFinance"
-            Manufacturer="DesktopFinance"
+            Manufacturer="eWorkpaper.com"
             Version="$(ProductVersion)"
             UpgradeCode="6E2F6D0C-6B36-4C8B-9E7E-6E2C6F6E9F10"
             Language="1033"
@@ -20,7 +20,7 @@
             InstallerVersion="500"
             Scope="perMachine">
 
-    <SummaryInformation Description="DesktopFinance Setup" Manufacturer="DesktopFinance" />
+    <SummaryInformation Description="DesktopFinance Setup" Manufacturer="eWorkpaper.com" />
 
     <!-- Refuse to install over a newer version already on the machine, and
          automatically remove the previous version before installing this one. -->
